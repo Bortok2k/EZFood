@@ -1,7 +1,47 @@
 ﻿@page "/"
+@inject NavigationManager Nav
 
-<PageTitle>Home</PageTitle>
+<div class="main-container">
 
-<h1>Hello, world!</h1>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="profile-circle"></div>
+    </div>
 
-Welcome to your new app.
+    <!-- Content -->
+    <div class="content">
+
+        <div class="grid">
+
+            <div class="card active" @onclick="@(() => GoTo("/caja"))">
+                <div class="icon">💻</div>
+                <p>Caja</p>
+            </div>
+
+            <div class="card" @onclick="@(() => GoTo("/factura"))">
+                <div class="icon">📄</div>
+                <p>Factura Electrónica</p>
+            </div>
+
+            <div class="card" @onclick="@(() => GoTo("/gestion"))">
+                <div class="icon">📋</div>
+                <p>Gestión</p>
+            </div>
+
+            <div class="card" @onclick="@(() => GoTo("/ezbot"))">
+                <div class="icon">🤖</div>
+                <p>EZBot</p>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+@code{
+    void GoTo(string url)
+    {
+        Nav.NavigateTo(url);
+    }
+}
