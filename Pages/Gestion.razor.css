@@ -1,0 +1,89 @@
+﻿.gestion-container {
+    display: flex;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* Sidebar izquierda */
+.sidebar {
+    width: 220px;
+    background: #F28C45;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 40px;
+}
+
+/* Círculo */
+.profile-circle {
+    width: 100px;
+    height: 100px;
+    background: #F6C28B;
+    border-radius: 50%;
+    margin-bottom: 40px;
+}
+
+/* Botón lateral */
+.side-button {
+    background: #F6B26B;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 20px;
+    color: white;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.side-button:hover {
+    background: #e89a4d;
+}
+
+/* Contenido derecho */
+.content {
+    flex: 1;
+    background: #d9d9d9;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Grid de botones */
+.grid-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, 200px);
+    gap: 80px;
+}
+
+/* Cards */
+.card {
+    width: 200px;
+    height: 200px;
+    background: #9c9590;
+    border-radius: 25px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    box-shadow: 0px 10px 20px rgba(0,0,0,0.2);
+    transition: 0.3s;
+}
+
+/* Hover */
+.card:hover {
+    transform: scale(1.05);
+    background: #F6B26B;
+}
+
+/* Icono */
+.icon {
+    font-size: 40px;
+    margin-bottom: 10px;
+}
+
+/* Texto */
+.card p {
+    color: white;
+    font-size: 12px;
+}

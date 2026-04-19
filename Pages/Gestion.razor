@@ -1,7 +1,38 @@
-﻿@page "/Gestion"
+﻿@page "/gestion"
 
-<h3>Gestion</h3>
+<div class="gestion-container">
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="profile-circle"></div>
+
+        <button class="side-button" @onclick="GoPlatos">
+            Lista de Productos
+        </button>
+    </div>
+
+    <!-- Contenido -->
+    <div class="content">
+
+        <div class="grid-buttons">
+
+            <div class="card" @onclick="GoInventario">
+                <div class="icon">📋</div>
+                <p>Inventario</p>
+            </div>
+
+            <div class="card" @onclick="GoBalance">
+                <div class="icon">🔖</div>
+                <p>Balance</p>
+            </div>
+
+        </div>
+
+    </div>
+</div>
 
 @code {
-
+    void GoInventario() => Nav.NavigateTo("/inventario");
+    void GoBalance() => Nav.NavigateTo("/balance");
+    void GoPlatos() => Nav.NavigateTo("/platos");
 }
