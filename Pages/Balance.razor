@@ -1,7 +1,179 @@
 ﻿@page "/balance"
+@inject HttpClient Http
 
-<h3>Balance</h3>
+<div class="inventario-container">
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="profile-circle"></div>
+        <button class="side-button" @onclick="OpenRegisterModal">
+            Registrar Gasto
+        </button>
+    </div>
+
+    <!-- Contenido -->
+    <div class="content">
+        <div class="balance-panels">
+
+            <!-- Panel Ingresos -->
+            <div class="panel panel-ingresos">
+                <h3>Ingresos</h3>
+                @foreach (var orden in ordenesPagadas ?? new List<Orden>())
+                {
+                    <div class="balance-item-Ingreso">
+                        <span>@orden.fecha</span>
+                        <span>$@orden.total</span>
+                    </div>
+                }
+            </div>
+
+            <!-- Panel Gastos -->
+            <div class="panel panel-gastos">
+                <h3>Gastos</h3>
+                @foreach (var gasto in gastos ?? new List<Gasto>())
+                {
+                    <div class="balance-item-Gasto">
+                        <span>@gasto.Fecha</span>
+                        <span>@gasto.Descripcion</span>
+                        <span>$@gasto.Costo</span>
+                    </div>
+                }
+            </div>
+
+        </div>
+
+        <!-- Balance total -->
+        <div class="balance-total">
+            <span>Balance: $@(totalIngresos - totalGastos)</span>
+        </div>
+    </div>
+</div>
+
+@* Modal registro gasto *@
+@if (showRegisterModal)
+{
+    <div class="comfirm-overlay">
+        <div class="comfirm-box">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h3 style="margin:0; color:white;">Registrar Gasto</h3>
+                <button @onclick="CloseRegisterModal"
+                        style="background:transparent; border:none; color:white;
+                                   font-size:22px; cursor:pointer;">
+                    ✕
+                </button>
+            </div>
+            <div class="register-grid">
+                <div class="register-field" style="grid-column: span 2;">
+                    <label>Descripción</label>
+                    <input @bind="newGasto.Descripcion" />
+                </div>
+                <div class="register-field">
+                    <label>Costo</label>
+                    <input type="number" @bind="newGasto.Costo" />
+                </div>
+                <div class="register-field">
+                    <label>Fecha</label>
+                    <input type="date"
+                           value="@newGasto.Fecha"
+                           @oninput="e => newGasto.Fecha = e.Value?.ToString()" />
+                </div>
+            </div>
+            <button class="register-btn" @onclick="RegisterGasto">
+                Registrar Gasto
+            </button>
+        </div>
+    </div>
+}
 
 @code {
+    List<Orden> ordenesPagadas = new();
+    List<Gasto> gastos = new();
 
+    int totalIngresos => ordenesPagadas?.Sum(o => o.total) ?? 0;
+    int totalGastos => gastos?.Sum(g => g.Costo) ?? 0;
+
+    bool showRegisterModal = false;
+    Gasto newGasto = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    async Task LoadData()
+    {
+        try
+        {
+            var ordenesResponse = await Http.GetFromJsonAsync<OrdenApiResponse>(
+                "http://localhost:8080/api/v1/Orden/ordenes");
+            ordenesPagadas = ordenesResponse?.data
+                ?.Where(o => o.estado_nombre?.ToLower() == "pagado")
+                .ToList() ?? new List<Orden>();
+        }
+        catch { ordenesPagadas = new List<Orden>(); }
+
+        try
+        {
+            var gastosResponse = await Http.GetFromJsonAsync<GastoApiResponse>(
+                "http://localhost:8080/api/v1/Gasto/gasto");
+            gastos = gastosResponse?.data ?? new List<Gasto>();
+        }
+        catch { gastos = new List<Gasto>(); }
+    }
+
+    void OpenRegisterModal()
+    {
+        newGasto = new Gasto
+        {
+            Fecha = DateTime.Now.ToString("yyyy-MM-dd") // ← string directamente
+        };
+        showRegisterModal = true;
+        StateHasChanged();
+    }
+
+    void CloseRegisterModal() => showRegisterModal = false;
+
+    async Task RegisterGasto()
+    {
+        if (string.IsNullOrWhiteSpace(newGasto.Descripcion)) return;
+
+        var payload = new Dictionary<string, object>
+        {
+            ["Descripcion"] = newGasto.Descripcion,
+            ["Costo"] = newGasto.Costo,
+            ["Fecha"] = string.IsNullOrWhiteSpace(newGasto.Fecha)
+                        ? DateTime.Now.ToString("yyyy-MM-dd")
+                        : newGasto.Fecha
+        };
+
+        await Http.PostAsJsonAsync("http://localhost:8080/api/v1/Gasto/gasto", payload);
+        showRegisterModal = false;
+        await LoadData();
+    }
+
+    class Orden
+    {
+        public string orden_id { get; set; }
+        public string estado_nombre { get; set; }
+        public string fecha { get; set; }
+        public int total { get; set; }
+    }
+
+    class Gasto
+    {
+        public string gasto_id { get; set; }
+        public string Descripcion { get; set; }
+        public int Costo { get; set; }
+        public string Fecha { get; set; } // ← string, no DateTime
+    }
+
+    class OrdenApiResponse
+    {
+        public List<Orden> data { get; set; }
+    }
+
+    class GastoApiResponse
+    {
+        public List<Gasto> data { get; set; }
+    }
 }

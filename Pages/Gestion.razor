@@ -9,6 +9,10 @@
         <button class="side-button" @onclick="GoPlatos">
             Lista de Productos
         </button>
+
+        <button class="side-button" @onclick="GoClientes">
+            Lista de Clientes
+        </button>
     </div>
 
     <!-- Contenido -->
@@ -35,4 +39,5 @@
     void GoInventario() => Nav.NavigateTo("/inventario");
     void GoBalance() => Nav.NavigateTo("/balance");
     void GoPlatos() => Nav.NavigateTo("/platos");
+    void GoClientes() => Nav.NavigateTo("/Clientes");
 }

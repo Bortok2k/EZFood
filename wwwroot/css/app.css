@@ -78,7 +78,7 @@
     border-radius: 20px;
     width: 420px;
     text-align: center;
-    position: relative;
+    position: fixed;
     z-index: 10000;
 }
 
