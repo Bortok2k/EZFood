@@ -1,16 +1,9 @@
 ﻿@page "/platos"
 @inject HttpClient Http
 @inject NavigationManager Nav
+@inject SidebarService SidebarService
+@implements IDisposable
 
-<div class="inventario-container">
-
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <div class="profile-circle"></div>
-        <button class="side-button" @onclick="OpenRegisterModal">
-            Registrar Plato
-        </button>
-    </div>
 
     <!-- Contenido -->
     <div class="content">
@@ -40,7 +33,6 @@
         </div>
 
     </div>
-</div>
 
 @* Modal confirmación borrado *@
 @if (showModal)
@@ -138,7 +130,15 @@
 
     protected override async Task OnInitializedAsync()
     {
+        SidebarService.SetButtons(
+        @<button class="side-button" @onclick="OpenRegisterModal">
+            Registrar Plato
+        </button>
+    );
         await LoadData();
+    }
+    public void Dispose()
+    {
     }
 
     async Task LoadData()

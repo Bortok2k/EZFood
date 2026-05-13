@@ -1,16 +1,10 @@
 ﻿@page "/Clientes"
 
 @inject HttpClient Http
-
-<div class="inventario-container">
-
+@inject SidebarService SidebarService
+@implements IDisposable
     <!-- Sidebar -->
-    <div class="sidebar">
-        <div class="profile-circle"></div>
-        <button class="side-button" @onclick="OpenRegisterModal">
-            Registrar Cliente
-        </button>
-    </div>
+
 
     <!-- Contenido -->
     <div class="content">
@@ -40,7 +34,7 @@
         </div>
 
     </div>
-</div>
+
 
 @* Modal confirmación borrado *@
 @if (showModal)
@@ -162,7 +156,16 @@
 
     protected override async Task OnInitializedAsync()
     {
+        SidebarService.SetButtons(
+        @<button class="side-button" @onclick="OpenRegisterModal">
+            Registrar Cliente
+        </button>
+    );
         await LoadData();
+    }
+
+    public void Dispose()
+    {
     }
 
     async Task LoadData()

@@ -1,60 +1,38 @@
 ﻿@page "/inventario"
 @inject HttpClient Http
 @inject NavigationManager Nav
+@inject SidebarService SidebarService
+@implements IDisposable
 
-<div class="inventario-container">
+<div class="content">
 
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <div class="profile-circle"></div>
-
-        <button class="side-button" @onclick="OpenRegisterModal">
-            Registrar Insumo
-        </button>
+    <div class="search-bar">
+        <input placeholder="Buscar..." value="@searchText" @oninput="OnSearch" />
     </div>
 
-    <!-- Contenido -->
-    <div class="content">
-
-        <!-- Buscador -->
-        <div class="search-bar">
-            <input placeholder="Buscar..." value="@searchText" @oninput="OnSearch" />
+    <div class="table">
+        <div class="table-header">
+            <span>Nombre</span>
+            <span>Cantidad</span>
+            <span>Medida</span>
+            <span></span>
         </div>
 
-        <!-- Tabla -->
-        <div class="table">
-
-            <div class="table-header">
-                <span>Nombre</span>
-                <span>Cantidad</span>
-                <span>Medida</span>
-                <span>Costo</span>
-                <span></span>
-            </div>
-
-            @foreach (var item in filteredInsumos)
-            {
-                <div class="table-row">
-
-                    <span>@item.Descripcion</span>
-                    <span>@item.Cantidad</span>
-                    <span>@item.Medida</span>
-                    <span>@item.Costo</span>
-
-                    <div class="actions">
-                        <button @onclick="() => Edit(item)">✏️</button>
-                        <button @onclick="() => ConfirmDelete(item)">🗑️</button>
-                    </div>
-
+        @foreach (var item in filteredInsumos)
+        {
+            <div class="table-row">
+                <span>@item.Descripcion</span>
+                <span>@item.Cantidad</span>
+                <span>@item.Medida</span>
+                <div class="actions">
+                    <button @onclick="() => VerHistorial(item)">📋</button>
+                    <button @onclick="() => Edit(item)">✏️</button>
+                    <button @onclick="() => ConfirmDelete(item)">🗑️</button>
                 </div>
-            }
-
-        </div>
-
+            </div>
+        }
     </div>
-
-    <!-- MODAL -->
-</div>
+</div>  <!-- MODAL -->
 
     @if (showModal)
     {
@@ -69,6 +47,42 @@
             </div>
         </div>
     }
+
+@if (showHistorialModal)
+{
+    <div class="comfirm-overlay">
+        <div class="comfirm-box" style="width:500px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h3 style="margin:0; color:white;">Historial — @insumoHistorial?.Descripcion</h3>
+                <button @onclick="() => showHistorialModal = false"
+                        style="background:transparent; border:none; color:white;
+                                   font-size:22px; cursor:pointer;">
+                    ✕
+                </button>
+            </div>
+
+            @if (gastosInsumo.Count == 0)
+            {
+                <p style="color:#ccc;">No hay gastos registrados para este insumo.</p>
+            }
+            else
+            {
+                @foreach (var g in gastosInsumo)
+                {
+                    <div style="display:flex; justify-content:space-between; padding:10px 15px;
+                                            background:#444; border-radius:10px; margin-bottom:8px; color:white;">
+                        <span>@g.Fecha</span>
+                        <span>@g.Descripcion</span>
+                        <span>$@g.Costo</span>
+                    </div>
+                }
+                <div style="margin-top:15px; text-align:right; color:#F28C45; font-weight:bold;">
+                    Total: $@gastosInsumo.Sum(g => g.Costo)
+                </div>
+            }
+        </div>
+    </div>
+}
 
 @if (showRegisterModal)
 {
@@ -91,13 +105,9 @@
                     <label>Cantidad</label>
                     <input type="number" @bind="newInsumo.Cantidad" />
                 </div>
-                <div class="register-field">
+                <div class="register-field" style="grid-column: span 2;">
                     <label>Medida</label>
                     <input @bind="newInsumo.Medida" />
-                </div>
-                <div class="register-field">
-                    <label>Costo</label>
-                    <input type="number" @bind="newInsumo.Costo" />
                 </div>
             </div>
             <button class="register-btn" @onclick="RegisterInsumo">
@@ -120,13 +130,9 @@
                     <label>Cantidad</label>
                     <input type="number" @bind="editInsumo.Cantidad" />
                 </div>
-                <div class="register-field">
+                <div class="register-field" style="grid-column: span 2;">
                     <label>Medida</label>
                     <input @bind="editInsumo.Medida" />
-                </div>
-                <div class="register-field">
-                    <label>Costo</label>
-                    <input type="number" @bind="editInsumo.Costo" />
                 </div>
             </div>
             <div style="display:flex; gap:15px; justify-content:center;">
@@ -146,21 +152,42 @@
 @code {
     List<Insumo> insumos = new();
     List<Insumo> filteredInsumos = new();
+    List<Gasto> gastosInsumo = new();
     Insumo editInsumo = new();
     Insumo newInsumo = new();
+    Insumo insumoHistorial;
+    Insumo selectedItem;
+
     bool showEditModal = false;
     bool showRegisterModal = false;
-   
+    bool showHistorialModal = false;
 
     string searchText = "";
 
     bool showModal = false;
-    Insumo selectedItem;
 
+
+    protected override void OnInitialized()
+{
+    SidebarService.SetButtons(
+        @<button class="side-button" @onclick="OpenRegisterModal">
+            Registrar Insumo
+        </button>
+    );
+}
+
+public void Dispose()
+{
+}
     protected override async Task OnInitializedAsync()
-    {
-        await LoadData();
-    }
+{
+    SidebarService.SetButtons(
+        @<button class="side-button" @onclick="OpenRegisterModal">
+            Registrar Insumo
+        </button>
+    );
+    await LoadData();
+}
 
     async Task LoadData()
     {
@@ -199,7 +226,6 @@
             Descripcion = item.Descripcion,
             Cantidad = item.Cantidad,
             Medida = item.Medida,
-            Costo = item.Costo
         };
         showEditModal = true;
     }
@@ -220,7 +246,6 @@
             ["Descripcion"] = editInsumo.Descripcion,
             ["Cantidad"] = editInsumo.Cantidad,
             ["Medida"] = editInsumo.Medida,
-            ["Costo"] = editInsumo.Costo
         };
 
         await Http.PutAsJsonAsync(
@@ -254,7 +279,6 @@
             Descripcion = "",
             Cantidad = 0,
             Medida = "",
-            Costo = 0
         };
         showRegisterModal = false;
         showRegisterModal = true;
@@ -278,7 +302,6 @@
             ["Descripcion"] = newInsumo.Descripcion,
             ["Cantidad"] = newInsumo.Cantidad,
             ["Medida"] = newInsumo.Medida,
-            ["Costo"] = newInsumo.Costo
         };
         await Http.PostAsJsonAsync("http://localhost:8080/api/v1/insumo/insumos", payload);
         showRegisterModal = false;
@@ -291,8 +314,44 @@
         Filter();
     }
 
+    async Task VerHistorial(Insumo item)
+    {
+        insumoHistorial = item;
 
+        try
+        {
+            var response = await Http.GetFromJsonAsync<GastoApiResponse>(
+                "http://localhost:8080/api/v1/Gasto/gasto");
+            var raw = await Http.GetStringAsync("http://localhost:8080/api/v1/Gasto/gasto");
+            Console.WriteLine($"JSON crudo: {raw}");
+            Console.WriteLine($"Buscando insumo_id: '{item.insumo_id}'");
+            gastosInsumo = response?.data
+                ?.Where(g => g.insumo_id == item.insumo_id)
+                .ToList() ?? new List<Gasto>();
+            Console.WriteLine($"Gastos encontrados: {gastosInsumo.Count}");
+        }
+        catch(Exception ex) { 
+            
+            Console.WriteLine($"ERROR al cargar gastos: {ex.Message}");
+            Console.WriteLine($"Inner: {ex.InnerException?.Message}");
+            gastosInsumo = new List<Gasto>(); 
+        
+        
+        }
 
+        showHistorialModal = true;
+        StateHasChanged();
+    }
+    
+    class Gasto
+    {
+        public string gasto_id { get; set; }
+        public string Descripcion { get; set; }
+        public int Costo { get; set; }
+        public string Fecha { get; set; }
+        public string insumo_id { get; set; }
+        public string Tipo { get; set; }
+    }
 
     class Insumo
     {
@@ -300,11 +359,15 @@
         public string Descripcion { get; set; }
         public int Cantidad { get; set; }
         public string Medida { get; set; }
-        public int Costo { get; set; }
     }
 
     class ApiResponse
     {
         public List<Insumo> data { get; set; }
+    }
+
+    class GastoApiResponse
+    {
+        public List<Gasto> data { get; set; }
     }
 }

@@ -1,5 +1,28 @@
 ﻿@inherits LayoutComponentBase
+@inject SidebarService SidebarService
+@implements IDisposable
 
-<div class="main-container">
-    @Body
+<div class="main-layout">
+    <div class="sidebar">
+        <div class="profile-circle"></div>
+        @if (SidebarService.SidebarButtons != null)
+        {
+            @SidebarService.SidebarButtons
+        }
+    </div>
+    <div class="main-content">
+        @Body
+    </div>
 </div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        SidebarService.OnChange += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        SidebarService.OnChange -= StateHasChanged;
+    }
+}

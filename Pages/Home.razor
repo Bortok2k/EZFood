@@ -1,12 +1,6 @@
 ﻿@page "/"
-
-<div class="main-container">
-
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <div class="profile-circle"></div>
-    </div>
-
+@implements IDisposable
+@inject SidebarService SidebarService
     <!-- Content -->
     <div class="content">
 
@@ -36,9 +30,16 @@
 
     </div>
 
-</div>
+
 
 @code{
+    protected override async Task OnInitializedAsync()
+    {
+        SidebarService.SetButtons(null);
+    }
+    public void Dispose()
+    {
+    }
     void GoTo(string url)
     {
         Nav.NavigateTo(url);
