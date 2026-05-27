@@ -1,0 +1,276 @@
+﻿@page "/balance"
+@inject HttpClient Http
+@inject SidebarService SidebarService
+@implements IDisposable
+
+
+
+    <!-- Contenido -->
+    <div class="content">
+        <div class="balance-panels">
+
+            <!-- Panel Ingresos -->
+            <div class="panel panel-ingresos">
+                <h3>Ingresos</h3>
+                @foreach (var orden in ordenesPagadas ?? new List<Orden>())
+                {
+                    <div class="balance-item-Ingreso">
+                        <span>@orden.fecha</span>
+                        <span>$@orden.total</span>
+                    </div>
+                }
+            </div>
+
+            <!-- Panel Gastos -->
+            <div class="panel panel-gastos">
+                <h3>Gastos</h3>
+                @foreach (var gasto in gastos ?? new List<Gasto>())
+                {
+                    <div class="balance-item-Gasto">
+                        <span>@gasto.Fecha</span>
+                        <span>@gasto.Descripcion</span>
+                        <span>$@gasto.Costo</span>
+                    </div>
+                }
+            </div>
+
+        </div>
+
+        <!-- Balance total -->
+        <div class="balance-total">
+            <span>Balance: $@(totalIngresos - totalGastos)</span>
+        </div>
+    </div>
+
+@* Modal registro gasto *@
+@if (showRegisterModal)
+{
+        <div class="comfirm-overlay">
+            <div class="comfirm-box">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                    <h3 style="margin:0; color:white;">Registrar Gasto</h3>
+                    <button @onclick="CloseRegisterModal"
+                            style="background:transparent; border:none; color:white;
+                                       font-size:22px; cursor:pointer;">
+                        ✕
+                    </button>
+                </div>
+
+                <!-- Selector de tipo -->
+                <div class="register-field" style="margin-bottom:15px; text-align:left;">
+                    <label>Tipo de gasto</label>
+                    <select @onchange="OnTipoChanged"
+                            style="width:100%; padding:8px 12px; border-radius:20px;
+                                       border:none; background:#ececec;">
+                        <option value="otro">Otro</option>
+                        <option value="insumo">Insumo</option>
+                    </select>
+                </div>
+
+                <div class="register-grid">
+
+                    @if (tipoGasto == "insumo")
+                    {
+                        <!-- Dropdown de insumos -->
+                        <div class="register-field" style="grid-column: span 2;">
+                            <label>Seleccionar Insumo</label>
+                            <select @onchange="OnInsumoSelected"
+                                    style="width:100%; padding:8px 12px; border-radius:20px;
+                                                   border:none; background:#ececec;">
+                                <option value="">-- Selecciona un insumo --</option>
+                                @foreach (var insumo in insumos)
+                                {
+                                    <option value="@insumo.insumo_id">@insumo.Descripcion</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="register-field">
+                            <label>Descripción</label>
+                            <input value="@newGasto.Descripcion" readonly
+                                   style="background:#ddd;" />
+                        </div>
+                        <div class="register-field">
+                            <label>Costo</label>
+                            <input type="number" value="@newGasto.Costo"
+                                   @oninput="e => newGasto.Costo = int.TryParse(e.Value?.ToString(), out var v) ? v : 0" />
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="register-field" style="grid-column: span 2;">
+                            <label>Descripción</label>
+                            <input @bind="newGasto.Descripcion" />
+                        </div>
+                        <div class="register-field">
+                            <label>Costo</label>
+                            <input type="number" @bind="newGasto.Costo" />
+                        </div>
+                    }
+
+                    <div class="register-field">
+                        <label>Fecha</label>
+                        <input type="date"
+                               value="@newGasto.Fecha"
+                               @oninput="e => newGasto.Fecha = e.Value?.ToString()" />
+                    </div>
+                </div>
+
+                <button class="register-btn" @onclick="RegisterGasto">
+                    Registrar Gasto
+                </button>
+            </div>
+        </div>
+}
+
+@code {
+    List<Orden> ordenesPagadas = new();
+    List<Gasto> gastos = new();
+    string tipoGasto = "otro";
+    string insumoSeleccionadoId = "";
+    List<Insumo> insumos = new();
+
+    int totalIngresos => ordenesPagadas?.Sum(o => o.total) ?? 0;
+    int totalGastos => gastos?.Sum(g => g.Costo) ?? 0;
+
+    bool showRegisterModal = false;
+    Gasto newGasto = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        SidebarService.SetButtons(
+        @<div style="display:flex; flex-direction:column; gap:10px;">
+            <button class="side-button" @onclick="OpenRegisterModal">
+                Registrar Gasto
+            </button>
+        </div>
+    );
+        await LoadData();
+    }
+
+    public void Dispose()
+    {
+    }
+
+    async Task LoadData()
+    {
+        // Órdenes pagadas
+        try
+        {
+            var ordenesResponse = await Http.GetFromJsonAsync<OrdenApiResponse>(
+                "http://localhost:8080/api/v1/Orden/ordenes");
+            ordenesPagadas = ordenesResponse?.data
+                ?.Where(o => o.estado_nombre?.ToLower() == "pagado")
+                .ToList() ?? new List<Orden>();
+        }
+        catch { ordenesPagadas = new List<Orden>(); }
+
+        // Gastos
+        try
+        {
+            var gastosResponse = await Http.GetFromJsonAsync<GastoApiResponse>(
+                "http://localhost:8080/api/v1/Gasto/gasto");
+            gastos = gastosResponse?.data ?? new List<Gasto>();
+        }
+        catch { gastos = new List<Gasto>(); }
+
+        // Insumos ← nuevo
+        try
+        {
+            var insumosResponse = await Http.GetFromJsonAsync<InsumoApiResponse>(
+                "http://localhost:8080/api/v1/insumo/insumos");
+            insumos = insumosResponse?.data ?? new List<Insumo>();
+        }
+        catch { insumos = new List<Insumo>(); }
+    }
+
+    void OnTipoChanged(ChangeEventArgs e)
+    {
+        tipoGasto = e.Value?.ToString() ?? "otro";
+        // Limpiar al cambiar tipo
+        newGasto = new Gasto { Fecha = DateTime.Now.ToString("yyyy-MM-dd") };
+        insumoSeleccionadoId = "";
+    }
+
+    void OnInsumoSelected(ChangeEventArgs e)
+    {
+        insumoSeleccionadoId = e.Value?.ToString() ?? "";
+        var insumo = insumos.FirstOrDefault(i => i.insumo_id == insumoSeleccionadoId);
+        if (insumo != null)
+        {
+            newGasto.Descripcion = insumo.Descripcion;
+            newGasto.Costo = 0;
+        }
+    }
+
+    void OpenRegisterModal()
+    {
+        newGasto = new Gasto { Fecha = DateTime.Now.ToString("yyyy-MM-dd") };
+        tipoGasto = "otro";
+        insumoSeleccionadoId = "";
+        showRegisterModal = true;
+        StateHasChanged();
+    }
+
+    void CloseRegisterModal() => showRegisterModal = false;
+
+    async Task RegisterGasto()
+    {
+        if (string.IsNullOrWhiteSpace(newGasto.Descripcion)) return;
+
+        var payload = new Dictionary<string, object>
+        {
+            ["Descripcion"] = newGasto.Descripcion,
+            ["Costo"] = newGasto.Costo,
+            ["Fecha"] = string.IsNullOrWhiteSpace(newGasto.Fecha)
+                        ? DateTime.Now.ToString("yyyy-MM-dd")
+                        : newGasto.Fecha,
+            ["Tipo"] = tipoGasto,                          // ← nuevo
+            ["insumo_id"] = insumoSeleccionadoId ?? ""     // ← nuevo
+        };
+
+        await Http.PostAsJsonAsync("http://localhost:8080/api/v1/Gasto/gasto", payload);
+        showRegisterModal = false;
+        await LoadData();
+    }
+
+    class Insumo
+    {
+        public string insumo_id { get; set; }
+        public string Descripcion { get; set; }
+        public int Cantidad { get; set; }
+        public string Medida { get; set; }
+    }
+
+    class InsumoApiResponse
+    {
+        public List<Insumo> data { get; set; }
+    }
+
+    class Orden
+    {
+        public string orden_id { get; set; }
+        public string estado_nombre { get; set; }
+        public string fecha { get; set; }
+        public int total { get; set; }
+    }
+
+    class Gasto
+    {
+        public string gasto_id { get; set; }
+        public string Descripcion { get; set; }
+        public int Costo { get; set; }
+        public string Fecha { get; set; } // ← string, no DateTime
+    }
+
+    class OrdenApiResponse
+    {
+        public List<Orden> data { get; set; }
+    }
+
+    class GastoApiResponse
+    {
+        public List<Gasto> data { get; set; }
+    }
+
+
+}

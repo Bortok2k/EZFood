@@ -1,0 +1,293 @@
+﻿@page "/Clientes"
+
+@inject HttpClient Http
+@inject SidebarService SidebarService
+@implements IDisposable
+    <!-- Sidebar -->
+
+
+    <!-- Contenido -->
+    <div class="content">
+
+        <div class="search-bar">
+            <input placeholder="Buscar..." value="@searchText" @oninput="OnSearch" />
+        </div>
+
+        <div class="table">
+            <div class="table-header">
+                <span>Nit</span>
+                <span>Nombre</span>
+                <span></span>
+            </div>
+
+            @foreach (var item in filteredClients)
+            {
+                <div class="table-row">
+                    <span>@item.nit</span>
+                    <span>@item.nombre</span>
+                    <div class="actions">
+                        <button @onclick="() => Edit(item)">✏️</button>
+                        <button @onclick="() => ConfirmDelete(item)">🗑️</button>
+                    </div>
+                </div>
+            }
+        </div>
+
+    </div>
+
+
+@* Modal confirmación borrado *@
+@if (showModal)
+{
+    <div class="comfirm-overlay">
+        <div class="comfirm-box">
+            <p>¿Está seguro que desea eliminar el cliente?</p>
+            <div class="modal-buttons">
+                <button class="no" @onclick="CloseModal">No</button>
+                <button class="yes" @onclick="DeleteConfirmed">Sí</button>
+            </div>
+        </div>
+    </div>
+}
+
+@* Modal registro *@
+@if (showRegisterModal)
+{
+    <div class="comfirm-overlay">
+        <div class="comfirm-box">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h3 style="margin:0; color:white;">Registrar Cliente</h3>
+                <button @onclick="CloseRegisterModal"
+                        style="background:transparent; border:none; color:white;
+                                   font-size:22px; cursor:pointer;">
+                    ✕
+                </button>
+            </div>
+            <div class="register-grid">
+                <div class="register-field">
+                    <label>Nit</label>
+                    <input type="number" @bind="newClient.nit" />
+                </div>
+                <div class="register-field">
+                    <label>Nombre</label>
+                    <input @bind="newClient.nombre" />
+                </div>
+                <div class="register-field">
+                    <label>Correo</label>
+                    <input @bind="newClient.correo" />
+                </div>
+                <div class="register-field">
+                    <label>Teléfono</label>
+                    <input @bind="newClient.telefono" />
+                </div>
+                <div class="register-field" style="grid-column: span 2;">
+                    <label>Dirección</label>
+                    <input @bind="newClient.direccion" />
+                </div>
+            </div>
+            <button class="register-btn" @onclick="RegisterClient">
+                Registrar Cliente
+            </button>
+        </div>
+    </div>
+}
+
+@* Modal edición *@
+@if (showEditModal)
+{
+    <div class="comfirm-overlay">
+        <div class="comfirm-box">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h3 style="margin:0; color:white;">Editar Cliente</h3>
+                <button @onclick="CloseEditModal"
+                        style="background:transparent; border:none; color:white;
+                                   font-size:22px; cursor:pointer;">
+                    ✕
+                </button>
+            </div>
+            <div class="register-grid">
+                <div class="register-field">
+                    <label>Nit</label>
+                    <input type="number" @bind="editClient.nit" />
+                </div>
+                <div class="register-field">
+                    <label>Nombre</label>
+                    <input @bind="editClient.nombre" />
+                </div>
+                <div class="register-field">
+                    <label>Correo</label>
+                    <input @bind="editClient.correo" />
+                </div>
+                <div class="register-field">
+                    <label>Teléfono</label>
+                    <input @bind="editClient.telefono" />
+                </div>
+                <div class="register-field" style="grid-column: span 2;">
+                    <label>Dirección</label>
+                    <input @bind="editClient.direccion" />
+                </div>
+            </div>
+            <div style="display:flex; gap:15px; justify-content:center; margin-top:10px;">
+                <button class="register-btn" style="background:gray; width:30%;"
+                        @onclick="CloseEditModal">
+                    Cancelar
+                </button>
+                <button class="register-btn" style="width:40%;"
+                        @onclick="SaveEdit">
+                    Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    List<Client> clients = new();
+    List<Client> filteredClients = new();
+    Client editClient = new();
+    Client newClient = new();
+    Client selectedItem;
+
+    bool showModal = false;
+    bool showRegisterModal = false;
+    bool showEditModal = false;
+
+    string searchText = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        SidebarService.SetButtons(
+        @<button class="side-button" @onclick="OpenRegisterModal">
+            Registrar Cliente
+        </button>
+    );
+        await LoadData();
+    }
+
+    public void Dispose()
+    {
+    }
+
+    async Task LoadData()
+    {
+        var response = await Http.GetFromJsonAsync<ApiResponse>("http://localhost:8080/api/v1/client/clients");
+        clients = response.data;
+        filteredClients = clients;
+    }
+
+    void OnSearch(ChangeEventArgs e)
+    {
+        searchText = e.Value?.ToString() ?? "";
+        Filter();
+    }
+
+    void Filter()
+    {
+        if (string.IsNullOrWhiteSpace(searchText))
+            filteredClients = clients;
+        else
+            filteredClients = clients
+                .Where(x => x.nombre.ToLower().Contains(searchText.ToLower())
+                         || x.nit.ToString().Contains(searchText))
+                .ToList();
+    }
+
+    // --- Registro ---
+    void OpenRegisterModal()
+    {
+        newClient = new Client();
+        showRegisterModal = true;
+    }
+
+    void CloseRegisterModal() => showRegisterModal = false;
+
+    async Task RegisterClient()
+    {
+        if (string.IsNullOrWhiteSpace(newClient.nombre)) return;
+
+        var payload = new Dictionary<string, object>
+        {
+            ["nit"] = newClient.nit,
+            ["nombre"] = newClient.nombre,
+            ["correo"] = newClient.correo ?? "",
+            ["telefono"] = newClient.telefono ?? "",
+            ["direccion"] = newClient.direccion ?? ""
+        };
+
+        await Http.PostAsJsonAsync("http://localhost:8080/api/v1/client/clients", payload);
+        showRegisterModal = false;
+        await LoadData();
+    }
+
+    // --- Edición ---
+    void Edit(Client item)
+    {
+        editClient = new Client
+        {
+            client_id = item.client_id,
+            nit = item.nit,
+            nombre = item.nombre,
+            correo = item.correo,
+            telefono = item.telefono,
+            direccion = item.direccion
+        };
+        showEditModal = true;
+        StateHasChanged();
+    }
+
+    void CloseEditModal() => showEditModal = false;
+
+    async Task SaveEdit()
+    {
+        if (string.IsNullOrWhiteSpace(editClient.nombre)) return;
+
+        var payload = new Dictionary<string, object>
+        {
+            ["nit"] = editClient.nit,
+            ["nombre"] = editClient.nombre,
+            ["correo"] = editClient.correo ?? "",
+            ["telefono"] = editClient.telefono ?? "",
+            ["direccion"] = editClient.direccion ?? ""
+        };
+
+        await Http.PutAsJsonAsync(
+            $"http://localhost:8080/api/v1/client/clients/{editClient.client_id}",
+            payload
+        );
+
+        showEditModal = false;
+        await LoadData();
+    }
+
+    // --- Borrado ---
+    void ConfirmDelete(Client item)
+    {
+        selectedItem = item;
+        showModal = true;
+        StateHasChanged();
+    }
+
+    void CloseModal() => showModal = false;
+
+    async Task DeleteConfirmed()
+    {
+        await Http.DeleteAsync($"http://localhost:8080/api/v1/client/clients/{selectedItem.client_id}");
+        showModal = false;
+        await LoadData();
+    }
+
+    class Client
+    {
+        public string client_id { get; set; }
+        public int nit { get; set; }
+        public string nombre { get; set; }
+        public string correo { get; set; }
+        public string telefono { get; set; }
+        public string direccion { get; set; }
+    }
+
+    class ApiResponse
+    {
+        public List<Client> data { get; set; }
+    }
+}

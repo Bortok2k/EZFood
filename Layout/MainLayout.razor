@@ -1,16 +1,28 @@
 ﻿@inherits LayoutComponentBase
-<div class="page">
+@inject SidebarService SidebarService
+@implements IDisposable
+
+<div class="main-layout">
     <div class="sidebar">
-        <NavMenu />
+        <div class="profile-circle"></div>
+        @if (SidebarService.SidebarButtons != null)
+        {
+            @SidebarService.SidebarButtons
+        }
     </div>
-
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div>
-
-        <article class="content px-4">
-            @Body
-        </article>
-    </main>
+    <div class="main-content">
+        @Body
+    </div>
 </div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        SidebarService.OnChange += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        SidebarService.OnChange -= StateHasChanged;
+    }
+}

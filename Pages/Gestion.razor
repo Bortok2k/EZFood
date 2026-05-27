@@ -1,0 +1,56 @@
+﻿@page "/gestion"
+@inject SidebarService SidebarService
+@inject NavigationManager Nav
+@implements IDisposable
+
+<div class="content">
+    <div class="grid-buttons">
+        <div class="card" @onclick="GoInventario">
+            <div class="icon">📋</div>
+            <p>Inventario</p>
+        </div>
+        <div class="card" @onclick="GoBalance">
+            <div class="icon">🔖</div>
+            <p>Balance</p>
+        </div>
+    </div>
+</div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        SetSidebarButtons();
+        Nav.LocationChanged += OnLocationChanged;
+    }
+
+    void OnLocationChanged(object sender, LocationChangedEventArgs e)
+    {
+        if (e.Location.Contains("/gestion"))
+        {
+            SetSidebarButtons();
+            StateHasChanged();
+        }
+    }
+
+    void SetSidebarButtons()
+    {
+        SidebarService.SetButtons(
+            @<div style="display:flex; flex-direction:column; gap:10px;">
+    <button class="side-button" @onclick='() => Nav.NavigateTo("/platos")'>
+        Lista de Productos
+    </button>
+    <button class="side-button" @onclick='() => Nav.NavigateTo("/clientes")'>
+        Lista de Clientes
+    </button>
+</div>
+        );
+    }
+
+    public void Dispose()
+    {
+        Nav.LocationChanged -= OnLocationChanged;
+    }
+
+    void GoInventario() => Nav.NavigateTo("/inventario");
+    void GoBalance() => Nav.NavigateTo("/balance");
+}

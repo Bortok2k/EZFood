@@ -1,0 +1,229 @@
+﻿.chat-historial {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 10px;
+    background: #e8e8e8;
+    border-radius: 20px;
+    min-height: 300px;
+    max-height: 500px;
+}
+
+.chat-sugerencias {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+    padding: 20px;
+}
+
+    .chat-sugerencias p {
+        color: #888;
+        font-size: 14px;
+    }
+
+.sugerencia {
+    background: white;
+    padding: 10px 20px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 13px;
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+    transition: 0.2s;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+    .sugerencia:hover {
+        background: #F28C45;
+        color: white;
+    }
+
+.mensaje {
+    display: flex;
+    width: 100%;
+}
+
+.mensaje-usuario {
+    justify-content: flex-end;
+}
+
+.mensaje-bot {
+    justify-content: flex-start;
+}
+
+.mensaje-contenido {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    max-width: 75%;
+}
+
+.bot-icon {
+    font-size: 20px;
+    margin-top: 4px;
+}
+
+.mensaje-texto {
+    padding: 10px 15px;
+    border-radius: 15px;
+    font-size: 14px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+}
+
+.mensaje-usuario .mensaje-texto {
+    background: #F28C45;
+    color: white;
+    border-bottom-right-radius: 4px;
+}
+
+.mensaje-bot .mensaje-texto {
+    background: white;
+    color: #333;
+    border-bottom-left-radius: 4px;
+}
+
+/* Animación de typing */
+.typing {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    padding: 12px 16px !important;
+}
+
+    .typing span {
+        width: 8px;
+        height: 8px;
+        background: #aaa;
+        border-radius: 50%;
+        animation: bounce 1.2s infinite;
+    }
+
+        .typing span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+@keyframes bounce {
+    0%, 60%, 100% {
+        transform: translateY(0);
+    }
+
+    30% {
+        transform: translateY(-6px);
+    }
+}
+
+/* Input */
+.chat-input {
+    display: flex;
+    gap: 10px;
+}
+
+    .chat-input input {
+        flex: 1;
+        padding: 12px 20px;
+        border-radius: 25px;
+        border: none;
+        font-size: 14px;
+        background: white;
+    }
+
+    .chat-input button {
+        background: #F28C45;
+        border: none;
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        color: white;
+        font-size: 18px;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+
+        .chat-input button:hover {
+            background: #e07a30;
+        }
+
+        .chat-input button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+.inventario-container {
+    display: flex;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.sidebar {
+    width: 220px;
+    background: #F28C45;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 20px;
+    flex-shrink: 0;
+}
+
+.profile-circle {
+    width: 100px;
+    height: 100px;
+    background: #F6C28B;
+    border-radius: 50%;
+}
+
+.content {
+    flex: 1;
+    padding: 20px 40px;
+    background: #d9d9d9;
+    overflow: hidden;
+}
+
+.chat-historial {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 15px;
+    background: #e8e8e8;
+    border-radius: 20px;
+    height: calc(100vh - 280px);
+}
+
+.modo-selector {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.btn-modo {
+    padding: 8px 20px;
+    border-radius: 20px;
+    border: none;
+    background: #c8c8c8;
+    color: #333;
+    cursor: pointer;
+    font-size: 13px;
+    transition: 0.2s;
+}
+
+    .btn-modo.activo {
+        background: #F28C45;
+        color: white;
+        font-weight: 600;
+    }
+
+    .btn-modo:hover {
+        background: #F28C45;
+        color: white;
+    }

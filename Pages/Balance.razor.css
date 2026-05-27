@@ -1,0 +1,135 @@
+﻿.inventario-container {
+    display: flex;
+    width: 100vw;
+    height: 100vh;
+}
+
+.sidebar {
+    width: 220px;
+    background: #F28C45;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 20px;
+    gap: 20px;
+}
+
+.profile-circle {
+    width: 100px;
+    height: 100px;
+    background: #F6C28B;
+    border-radius: 50%;
+}
+
+.side-button {
+    background: #F6B26B;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 20px;
+    color: white;
+    cursor: pointer;
+}
+
+.content {
+    flex: 1;
+    padding: 30px 40px;
+    background: #d9d9d9;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Paneles */
+.balance-panels {
+    display: flex;
+    gap: 30px;
+    flex: 1;
+    width: 100%;
+}
+
+.panel {
+    flex: 1;
+    border-radius: 20px;
+    padding: 25px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow-y: auto;
+    min-width: 0;
+}
+
+.balance-item-Gasto {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.5);
+    font-size: 14px;
+    gap: 10px;
+}
+
+.balance-item-Ingreso {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-radius: 10px;
+    background: rgb(175,175,175,0.5);
+    font-size: 14px;
+    gap: 10px;
+}
+
+.panel h3 {
+    text-align: center;
+    margin: 0 0 10px 0;
+    font-weight: 600;
+}
+
+.panel-ingresos {
+    background: white;
+    color: #333;
+}
+
+
+.panel-gastos {
+    background: #c8c8c8;
+    color: #333;
+}
+
+/* Balance total */
+.balance-total {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.balance-total span {
+    background: #eee;
+    padding: 10px 30px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.comfirm-overlay {
+    position: fixed !important;
+    top: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    bottom: 0 !important;
+    z-index: 9999 !important;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.comfirm-box {
+    background: #a9a9a9 !important;
+    padding: 25px;
+    border-radius: 15px;
+    width: 420px;
+    text-align: center;
+    color: white;
+    position: relative;
+    z-index: 10000;
+}

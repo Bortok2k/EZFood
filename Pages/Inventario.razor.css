@@ -1,0 +1,131 @@
+﻿.inventario-container {
+    display: flex;
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 220px;
+    background: #F28C45;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 20px; 
+    gap: 20px; 
+}
+
+.profile-circle {
+    width: 100px;
+    height: 100px;
+    background: #F6C28B;
+    border-radius: 50%;
+    margin-bottom: 40px;
+}
+
+.side-button {
+    background: #F6B26B;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 20px;
+    color: white;
+    cursor: pointer;
+}
+
+/* Content */
+.content {
+    flex: 1;
+    padding: 40px;
+    background: #d9d9d9;
+    display: flex;
+    flex-direction: column;
+}
+
+.search-bar {
+    margin-bottom: 15px; /* ← pegado a la tabla */
+}
+
+/* Search */
+.search-bar input {
+    width: 300px;
+    padding: 10px;
+    border-radius: 20px;
+    border: none;
+}
+
+/* Table */
+.table {
+    width: 100%;
+    flex: 1;
+}
+
+.table-header,
+.table-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.table-row {
+    background: #eee;
+    padding: 10px;
+    border-radius: 20px;
+}
+
+/* Actions */
+.actions button {
+    margin-left: 5px;
+    border: none;
+    cursor: pointer;
+    background: transparent;
+    font-size: 16px;
+}
+
+/* Modal */
+.comfirm-overlay {
+    position: fixed !important;
+    top: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    bottom: 0 !important;
+    z-index: 9999 !important;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.comfirm-box {
+    background: #a9a9a9 !important;
+    padding: 25px;
+    border-radius: 15px;
+    width: 420px;
+    text-align: center;
+    color: white;
+    position: relative;
+    z-index: 10000;
+}
+/* botones */
+.modal-buttons {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 20px;
+}
+
+.modal-buttons .no {
+    background: red;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 20px;
+    color: white;
+}
+
+.modal-buttons .yes {
+    background: limegreen;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 20px;
+    color: white;
+}

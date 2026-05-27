@@ -1,0 +1,262 @@
+﻿@page "/platos"
+@inject HttpClient Http
+@inject NavigationManager Nav
+@inject SidebarService SidebarService
+@implements IDisposable
+
+
+    <!-- Contenido -->
+    <div class="content">
+
+        <div class="search-bar">
+            <input placeholder="Buscar..." value="@searchText" @oninput="OnSearch" />
+        </div>
+
+        <div class="table">
+            <div class="table-header">
+                <span>Descripcion</span>
+                <span>Precio</span>
+                <span></span>
+            </div>
+
+            @foreach (var item in filteredPlatos)
+            {
+                <div class="table-row">
+                    <span>@item.Descripcion</span>
+                    <span>@item.Precio</span>
+                    <div class="actions">
+                        <button @onclick="() => Edit(item)">✏️</button>
+                        <button @onclick="() => ConfirmDelete(item)">🗑️</button>
+                    </div>
+                </div>
+            }
+        </div>
+
+    </div>
+
+@* Modal confirmación borrado *@
+@if (showModal)
+{
+    <div class="comfirm-overlay">
+        <div class="comfirm-box">
+            <p>¿Está seguro que desea eliminar el plato?</p>
+            <div class="modal-buttons">
+                <button class="no" @onclick="CloseModal">No</button>
+                <button class="yes" @onclick="DeleteConfirmed">Sí</button>
+            </div>
+        </div>
+    </div>
+}
+
+@* Modal registro *@
+@if (showRegisterModal)
+{
+    <div class="comfirm-overlay">
+        <div class="comfirm-box">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h3 style="margin:0; color:white;">Registrar Plato</h3>
+                <button @onclick="CloseRegisterModal"
+                        style="background:transparent; border:none; color:white;
+                                   font-size:22px; cursor:pointer; line-height:1;">
+                    ✕
+                </button>
+            </div>
+            <div class="register-grid">
+                <div class="register-field">
+                    <label>Descripcion</label>
+                    <input @bind="newPlato.Descripcion" />
+                </div>
+                <div class="register-field">
+                    <label>Precio</label>
+                    <input type="number" @bind="newPlato.Precio" />
+                </div>
+            </div>
+            <button class="register-btn" @onclick="RegisterPlato">
+                Registrar Plato
+            </button>
+        </div>
+    </div>
+}
+
+@* Modal edición *@
+@if (showEditModal)
+{
+    <div class="comfirm-overlay">
+        <div class="comfirm-box">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h3 style="margin:0; color:white;">Editar Plato</h3>
+                <button @onclick="CloseEditModal"
+                        style="background:transparent; border:none; color:white;
+                                   font-size:22px; cursor:pointer; line-height:1;">
+                    ✕
+                </button>
+            </div>
+            <div class="register-grid">
+                <div class="register-field">
+                    <label>Descripcion</label>
+                    <input @bind="editPlato.Descripcion" />
+                </div>
+                <div class="register-field">
+                    <label>Precio</label>
+                    <input type="number" @bind="editPlato.Precio" />
+                </div>
+            </div>
+            <div style="display:flex; gap:15px; justify-content:center; margin-top:10px;">
+                <button class="register-btn" style="background:gray; width:30%;"
+                        @onclick="CloseEditModal">
+                    Cancelar
+                </button>
+                <button class="register-btn" style="width:40%;"
+                        @onclick="SaveEdit">
+                    Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    List<Plato> platos = new();
+    List<Plato> filteredPlatos = new();
+    Plato editPlato = new();
+    Plato newPlato = new();
+    Plato selectedItem;
+
+    bool showModal = false;
+    bool showRegisterModal = false;
+    bool showEditModal = false;
+
+    string searchText = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        SidebarService.SetButtons(
+        @<button class="side-button" @onclick="OpenRegisterModal">
+            Registrar Plato
+        </button>
+    );
+        await LoadData();
+    }
+    public void Dispose()
+    {
+    }
+
+    async Task LoadData()
+    {
+        var response = await Http.GetFromJsonAsync<ApiResponse>("http://localhost:8080/api/v1/Plato/Platos");
+        platos = response.data;
+        filteredPlatos = platos;
+    }
+
+    void OnSearch(ChangeEventArgs e)
+    {
+        searchText = e.Value?.ToString() ?? "";
+        Filter();
+    }
+
+    void Filter()
+    {
+        if (string.IsNullOrWhiteSpace(searchText))
+            filteredPlatos = platos;
+        else
+            filteredPlatos = platos
+                .Where(x => x.Descripcion.ToLower().Contains(searchText.ToLower()))
+                .ToList();
+    }
+
+    // --- Registro ---
+    void OpenRegisterModal()
+    {
+        newPlato = new Plato { Descripcion = "", Precio = 0 };
+        showRegisterModal = true;
+    }
+
+    void CloseRegisterModal()
+    {
+        showRegisterModal = false;
+    }
+
+    async Task RegisterPlato()
+    {
+        if (string.IsNullOrWhiteSpace(newPlato.Descripcion)) return;
+
+        var payload = new Dictionary<string, object>
+        {
+            ["Descripcion"] = newPlato.Descripcion,
+            ["Precio"] = newPlato.Precio
+        };
+
+        await Http.PostAsJsonAsync("http://localhost:8080/api/v1/Plato/Platos", payload);
+        showRegisterModal = false;
+        await LoadData();
+    }
+
+    // --- Edición ---
+    void Edit(Plato item)
+    {
+        editPlato = new Plato
+        {
+            plato_id = item.plato_id,
+            Descripcion = item.Descripcion,
+            Precio = item.Precio
+        };
+        showEditModal = true;
+        StateHasChanged();
+    }
+
+    void CloseEditModal()
+    {
+        showEditModal = false;
+    }
+
+    async Task SaveEdit()
+    {
+        if (string.IsNullOrWhiteSpace(editPlato.Descripcion)) return;
+
+        var payload = new Dictionary<string, object>
+        {
+            ["Descripcion"] = editPlato.Descripcion,
+            ["Precio"] = editPlato.Precio
+        };
+
+        await Http.PutAsJsonAsync(
+            $"http://localhost:8080/api/v1/Plato/Platos/{editPlato.plato_id}",
+            payload
+        );
+
+        showEditModal = false;
+        await LoadData();
+    }
+
+    // --- Borrado ---
+    void ConfirmDelete(Plato item)
+    {
+        selectedItem = item;
+        showModal = true;
+        StateHasChanged();
+    }
+
+    void CloseModal()
+    {
+        showModal = false;
+    }
+
+    async Task DeleteConfirmed()
+    {
+        await Http.DeleteAsync($"http://localhost:8080/api/v1/Plato/Platos/{selectedItem.plato_id}");
+        showModal = false;
+        await LoadData();
+    }
+
+    class Plato
+    {
+        public string plato_id { get; set; }
+        public string Descripcion { get; set; }
+        public int Precio { get; set; }
+    }
+
+    class ApiResponse
+    {
+        public List<Plato> data { get; set; }
+    }
+}

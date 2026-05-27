@@ -1,0 +1,292 @@
+﻿.caja-container {
+    display: flex;
+    width: 100vw;
+    height: 100vh;
+}
+
+.sidebar {
+    width: 220px;
+    background: #F28C45;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 20px;
+}
+
+.profile-circle {
+    width: 100px;
+    height: 100px;
+    background: #F6C28B;
+    border-radius: 50%;
+}
+
+.caja-content {
+    flex: 1;
+    display: flex;
+    gap: 20px;
+    padding: 20px 30px;
+    background: #d9d9d9;
+    overflow: hidden;
+}
+
+/* Panel izquierdo */
+.panel-izquierdo {
+    flex: 1.2;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    overflow-y: auto;
+}
+
+.mesa-selector {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.mesa-selector label {
+    font-weight: 600;
+    font-size: 15px;
+}
+
+.mesa-selector select {
+    padding: 8px 15px;
+    border-radius: 20px;
+    border: none;
+    background: white;
+    font-size: 14px;
+}
+
+/* Grid de platos */
+.platos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+    overflow-y: auto;
+}
+
+.plato-card {
+    background: white;
+    border-radius: 15px;
+    padding: 15px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    text-align: center;
+    transition: 0.2s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.plato-card:hover {
+    transform: scale(1.03);
+}
+
+.plato-card.seleccionado {
+    background: #F28C45;
+    color: white;
+}
+
+.plato-nombre {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.plato-precio {
+    font-size: 12px;
+    opacity: 0.8;
+}
+
+.cantidad-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 5px;
+}
+
+.cantidad-control button {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: none;
+    background: white;
+    color: #F28C45;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.cantidad-control span {
+    font-weight: bold;
+    font-size: 15px;
+}
+
+.btn-crear-orden {
+    background: #F28C45;
+    border: none;
+    padding: 12px;
+    border-radius: 20px;
+    color: white;
+    font-size: 15px;
+    cursor: pointer;
+    width: 100%;
+    font-weight: 600;
+}
+
+.btn-crear-orden:hover {
+    background: #e07a30;
+}
+
+/* Panel derecho */
+.panel-derecho {
+    flex: 0.8;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow-y: auto;
+}
+
+.panel-derecho h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.sin-ordenes {
+    color: #888;
+    font-size: 14px;
+    text-align: center;
+    margin-top: 20px;
+}
+
+.orden-card {
+    background: white;
+    border-radius: 15px;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.orden-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.orden-mesa {
+    font-weight: 700;
+    font-size: 15px;
+}
+
+.orden-total {
+    font-weight: 700;
+    color: #F28C45;
+    font-size: 15px;
+}
+
+.orden-platos {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    font-size: 13px;
+    color: #555;
+}
+
+.orden-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.btn-cobrar {
+    background: #F28C45;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 15px;
+    color: white;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.btn-cobrar:hover {
+    background: #e07a30;
+}
+
+.comfirm-overlay {
+    position: fixed !important;
+    top: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    bottom: 0 !important;
+    z-index: 9999 !important;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.comfirm-box {
+    background: #a9a9a9 !important;
+    padding: 25px;
+    border-radius: 15px;
+    width: 420px;
+    text-align: center;
+    color: white;
+    position: relative;
+    z-index: 10000;
+}
+
+.btn-editar {
+    background: #555;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 15px;
+    color: white;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+    .btn-editar:hover {
+        background: #777;
+    }
+
+.orden-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px; /* ← agregar gap entre botones */
+}
+
+.btn-eliminar {
+    background: #cc3333;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 15px;
+    color: white;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+    .btn-eliminar:hover {
+        background: #aa2222;
+    }
+
+.modal-buttons .no {
+    background: red;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 20px;
+    color: white;
+}
+
+.modal-buttons .yes {
+    background: limegreen;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 20px;
+    color: white;
+}
