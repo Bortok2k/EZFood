@@ -10,7 +10,21 @@
             <h2 style="margin:5px 0;">EZBot</h2>
             <p style="color:#666; font-size:13px;">Asistente de inteligencia de negocio</p>
         </div>
-
+    <!-- Selector de modo -->
+    <div class="modo-selector">
+        <button class="btn-modo @(modoActual == "general" ? "activo" : "")"
+                @onclick='() => CambiarModo("general")'>
+            🤖 General
+        </button>
+        <button class="btn-modo @(modoActual == "administrador" ? "activo" : "")"
+                @onclick='() => CambiarModo("administrador")'>
+            📋 Administrador
+        </button>
+        <button class="btn-modo @(modoActual == "financiero" ? "activo" : "")"
+                @onclick='() => CambiarModo("financiero")'>
+            💰 Financiero
+        </button>
+    </div>
         <!-- Historial de chat -->
         <div class="chat-historial">
             @if (mensajes.Count == 0)
@@ -77,6 +91,16 @@
     string preguntaActual = "";
     bool cargando = false;
 
+    string modoActual = "general";
+
+    void CambiarModo(string modo)
+    {
+        modoActual = modo;
+        // Limpiar chat al cambiar modo
+        mensajes.Clear();
+        StateHasChanged();
+    }
+
     async Task Enviar()
     {
         if (string.IsNullOrWhiteSpace(preguntaActual) || cargando) return;
@@ -92,14 +116,14 @@
         {
             var payload = new Dictionary<string, string>
             {
-                ["pregunta"] = pregunta
+                ["pregunta"] = pregunta,
+                ["modo"] = modoActual  // ← agregar modo
             };
 
             var response = await Http.PostAsJsonAsync(
                 "http://localhost:8080/api/v1/EZBot/consultar", payload);
 
             var result = await response.Content.ReadFromJsonAsync<EZBotResponse>();
-
             mensajes.Add(new Mensaje
             {
                 Texto = result?.respuesta ?? "No pude obtener una respuesta.",
@@ -110,7 +134,7 @@
         {
             mensajes.Add(new Mensaje
             {
-                Texto = "Hubo un error al conectar con EZBot. Intenta de nuevo.",
+                Texto = "Hubo un error al conectar con EZBot.",
                 EsUsuario = false
             });
         }
@@ -140,6 +164,7 @@
     {
         public string respuesta { get; set; }
     }
+
 
 
 }

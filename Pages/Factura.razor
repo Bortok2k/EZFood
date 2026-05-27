@@ -1,7 +1,284 @@
 ﻿@page "/Factura"
 
-<h3>Factura</h3>
+@inject HttpClient Http
+@inject SidebarService SidebarService
+@implements IDisposable
+
+<div class="content" style="padding:20px 40px; background:#d9d9d9;
+                             min-height:100vh; display:flex; flex-direction:column; gap:20px;">
+
+    <h2 style="margin:0;">Factura Electrónica</h2>
+
+    <!-- Buscador por NIT -->
+    <div style="display:flex; gap:10px; align-items:center;">
+        <input placeholder="Buscar cliente por NIT..."
+               value="@nitBusqueda"
+               @oninput="e => nitBusqueda = e.Value?.ToString()"
+               style="padding:10px 20px; border-radius:20px; border:none; width:280px;" />
+        <button @onclick="BuscarCliente"
+                style="background:#F28C45; border:none; padding:10px 20px;
+                       border-radius:20px; color:white; cursor:pointer;">
+            Buscar
+        </button>
+    </div>
+
+    @if (clienteEncontrado != null)
+    {
+        <!-- Info cliente -->
+        <div style="background:white; border-radius:15px; padding:20px; max-width:500px;">
+            <h4 style="margin:0 0 10px;">Cliente encontrado</h4>
+            <p style="margin:4px 0;"><strong>NIT:</strong> @clienteEncontrado.nit</p>
+            <p style="margin:4px 0;"><strong>Nombre:</strong> @clienteEncontrado.nombre</p>
+            <p style="margin:4px 0;"><strong>Correo:</strong> @clienteEncontrado.correo</p>
+            <p style="margin:4px 0;"><strong>Dirección:</strong> @clienteEncontrado.direccion</p>
+        </div>
+
+        <!-- Selector de orden -->
+        <div style="display:flex; gap:10px; align-items:center;">
+            <label style="font-weight:600;">Seleccionar orden pagada:</label>
+            <select @bind="ordenSeleccionadaId"
+                    style="padding:8px 15px; border-radius:20px; border:none; background:white;">
+                <option value="">-- Selecciona una orden --</option>
+                @foreach (var orden in ordenesPagadas)
+                {
+                    <option value="@orden.orden_id">
+                        Mesa @orden.mesa — $@orden.total — @orden.fecha
+                    </option>
+                }
+            </select>
+        </div>
+
+        <button @onclick="GenerarFactura"
+                disabled="@(string.IsNullOrEmpty(ordenSeleccionadaId))"
+                style="background:#F28C45; border:none; padding:12px 30px;
+                           border-radius:20px; color:white; cursor:pointer;
+                           font-size:15px; font-weight:600; width:fit-content;">
+            Generar Factura
+        </button>
+    }
+
+    @if (mensajeError != null)
+    {
+        <p style="color:red;">@mensajeError</p>
+    }
+</div>
+
+@* Modal resumen factura *@
+@if (showFacturaModal && facturaGenerada != null)
+{
+    <div class="comfirm-overlay">
+        <div class="comfirm-box" style="width:500px; max-height:85vh; overflow-y:auto;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h3 style="margin:0; color:white;">Factura Electrónica</h3>
+                <button @onclick="() => showFacturaModal = false"
+                        style="background:transparent; border:none; color:white;
+                                   font-size:22px; cursor:pointer;">
+                    ✕
+                </button>
+            </div>
+
+            <!-- Número de factura -->
+            <div style="background:#444; border-radius:10px; padding:10px;
+                            margin-bottom:15px; color:#F28C45; font-weight:bold; text-align:center;">
+                N° @facturaGenerada.factura_id.Substring(0, 8).ToUpper()
+            </div>
+
+            <!-- Datos del restaurante -->
+            <div style="color:#ccc; font-size:12px; text-align:center; margin-bottom:15px;">
+                <div style="font-weight:bold; color:white; font-size:14px;">SANTA CLARA GOURMET</div>
+                <div>Bugalagrande, Valle del Cauca</div>
+                <div>Régimen Simple de Tributación</div>
+            </div>
+
+            <!-- Datos del cliente -->
+            <div style="background:#444; border-radius:10px; padding:12px; margin-bottom:15px;">
+                <div style="color:#ccc; font-size:12px; margin-bottom:5px;">DATOS DEL CLIENTE</div>
+                <div style="color:white; font-size:13px;">
+                    <div><strong>NIT:</strong> @facturaGenerada.cliente_nit</div>
+                    <div><strong>Nombre:</strong> @facturaGenerada.cliente_nombre</div>
+                    <div><strong>Correo:</strong> @facturaGenerada.cliente_correo</div>
+                    <div><strong>Dirección:</strong> @facturaGenerada.cliente_direccion</div>
+                </div>
+            </div>
+
+            <!-- Info orden -->
+            <div style="color:white; font-size:13px; margin-bottom:10px;">
+                <div><strong>Mesa:</strong> @facturaGenerada.mesa</div>
+                <div><strong>Fecha:</strong> @facturaGenerada.fecha</div>
+                <div><strong>Hora:</strong> @facturaGenerada.hora</div>
+            </div>
+
+            <!-- Platos -->
+            <div style="margin-bottom:15px;">
+                <div style="color:#ccc; font-size:12px; margin-bottom:8px;">DETALLE</div>
+                @foreach (var p in facturaGenerada.platos)
+                {
+                    <div style="display:flex; justify-content:space-between;
+                                        padding:6px 10px; background:#444;
+                                        border-radius:8px; margin-bottom:6px; color:white; font-size:13px;">
+                        <span>@p.cantidad× @p.Descripcion</span>
+                        <span>$@p.subtotal</span>
+                    </div>
+                }
+            </div>
+
+            <!-- Totales -->
+            <div style="border-top:1px solid #555; padding-top:12px;">
+                <div style="display:flex; justify-content:space-between; color:white; margin-bottom:6px;">
+                    <span>Subtotal</span>
+                    <span>$@facturaGenerada.subtotal</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; color:#ccc; margin-bottom:6px; font-size:13px;">
+                    <span>Impuesto al consumo (8%)</span>
+                    <span>$@facturaGenerada.impuesto_consumo</span>
+                </div>
+                <div style="display:flex; justify-content:space-between;
+                                color:white; font-weight:bold; font-size:16px;
+                                background:#F28C45; padding:10px; border-radius:10px; margin-top:8px;">
+                    <span>TOTAL</span>
+                    <span>$@facturaGenerada.total</span>
+                </div>
+            </div>
+
+            <div style="text-align:center; color:#888; font-size:11px; margin-top:15px;">
+                Estado: @facturaGenerada.estado — Documento de prueba
+            </div>
+        </div>
+    </div>
+}
 
 @code {
+    string nitBusqueda = "";
+    string ordenSeleccionadaId = "";
+    string mensajeError = null;
+    bool showFacturaModal = false;
 
+    Cliente clienteEncontrado = null;
+    List<Orden> ordenesPagadas = new();
+    FacturaData facturaGenerada = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        SidebarService.SetButtons(null);
+        await LoadOrdenesPagadas();
+    }
+
+    public void Dispose() { }
+
+    async Task LoadOrdenesPagadas()
+    {
+        try
+        {
+            var response = await Http.GetFromJsonAsync<OrdenApiResponse>(
+                "http://localhost:8080/api/v1/Orden/ordenes");
+            ordenesPagadas = response?.data
+                ?.Where(o => o.estado_nombre == "pagado")
+                .ToList() ?? new List<Orden>();
+        }
+        catch { ordenesPagadas = new List<Orden>(); }
+    }
+
+    async Task BuscarCliente()
+    {
+        mensajeError = null;
+        clienteEncontrado = null;
+
+        if (string.IsNullOrWhiteSpace(nitBusqueda)) return;
+
+        try
+        {
+            var response = await Http.GetFromJsonAsync<ClienteNitResponse>(
+                $"http://localhost:8080/api/v1/client/clients/nit/{nitBusqueda}");
+            clienteEncontrado = response?.data;
+
+            if (clienteEncontrado == null)
+                mensajeError = "No se encontró ningún cliente con ese NIT.";
+        }
+        catch
+        {
+            mensajeError = "No se encontró ningún cliente con ese NIT.";
+        }
+    }
+
+    async Task GenerarFactura()
+    {
+        mensajeError = null;
+        if (clienteEncontrado == null || string.IsNullOrEmpty(ordenSeleccionadaId)) return;
+
+        try
+        {
+            var payload = new Dictionary<string, object>
+            {
+                ["orden_id"] = ordenSeleccionadaId,
+                ["cliente_nit"] = clienteEncontrado.nit
+            };
+
+            var response = await Http.PostAsJsonAsync(
+                "http://localhost:8080/api/v1/FacturaElectronica/facturas", payload);
+
+            // ← leer solo una vez, directo a objeto
+            var result = await response.Content.ReadFromJsonAsync<FacturaResponse>();
+
+            facturaGenerada = result?.data;
+
+            Console.WriteLine($"Factura: {facturaGenerada?.factura_id}");
+            Console.WriteLine($"Cliente: {facturaGenerada?.cliente_nombre}");
+
+            showFacturaModal = true;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+            mensajeError = "Error al generar la factura. Intente de nuevo.";
+        }
+    }
+
+    class Cliente
+    {
+        public int nit { get; set; }
+        public string nombre { get; set; }
+        public string correo { get; set; }
+        public string telefono { get; set; }
+        public string direccion { get; set; }
+    }
+
+    class Orden
+    {
+        public string orden_id { get; set; }
+        public int mesa { get; set; }
+        public string estado_nombre { get; set; }
+        public int total { get; set; }
+        public string fecha { get; set; }
+        public string hora { get; set; }
+        public List<PlatoOrden> platos { get; set; } = new();
+    }
+
+    class PlatoOrden
+    {
+        public string Descripcion { get; set; }
+        public int cantidad { get; set; }
+        public int subtotal { get; set; }
+    }
+
+    class FacturaData
+    {
+        public string factura_id { get; set; }
+        public int cliente_nit { get; set; }
+        public string cliente_nombre { get; set; }
+        public string cliente_correo { get; set; }
+        public string cliente_direccion { get; set; }
+        public int mesa { get; set; }
+        public string fecha { get; set; }
+        public string hora { get; set; }
+        public List<PlatoOrden> platos { get; set; } = new();
+        public int subtotal { get; set; }
+        public int impuesto_consumo { get; set; }
+        public int total { get; set; }
+        public string estado { get; set; }
+    }
+
+    class OrdenApiResponse { public List<Orden> data { get; set; } }
+    class ClienteNitResponse { public Cliente data { get; set; } }
+    class FacturaResponse { public FacturaData data { get; set; } }
 }
