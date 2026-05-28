@@ -121,7 +121,7 @@
             };
 
             var response = await Http.PostAsJsonAsync(
-                "http://localhost:8080/api/v1/EZBot/consultar", payload);
+                $"{ApiConfig.BaseUrl}/EZBot/consultar", payload);
 
             var result = await response.Content.ReadFromJsonAsync<EZBotResponse>();
             mensajes.Add(new Mensaje
@@ -156,13 +156,13 @@
 
     class Mensaje
     {
-        public string Texto { get; set; }
+        public string? Texto { get; set; }
         public bool EsUsuario { get; set; }
     }
 
     class EZBotResponse
     {
-        public string respuesta { get; set; }
+        public string? respuesta { get; set; }
     }
 
 

@@ -146,7 +146,7 @@
     List<Client> filteredClients = new();
     Client editClient = new();
     Client newClient = new();
-    Client selectedItem;
+    Client? selectedItem;
 
     bool showModal = false;
     bool showRegisterModal = false;
@@ -170,7 +170,7 @@
 
     async Task LoadData()
     {
-        var response = await Http.GetFromJsonAsync<ApiResponse>("http://localhost:8080/api/v1/client/clients");
+        var response = await Http.GetFromJsonAsync<ApiResponse>($"{ApiConfig.BaseUrl}/client/clients");
         clients = response.data;
         filteredClients = clients;
     }
@@ -214,7 +214,7 @@
             ["direccion"] = newClient.direccion ?? ""
         };
 
-        await Http.PostAsJsonAsync("http://localhost:8080/api/v1/client/clients", payload);
+        await Http.PostAsJsonAsync($"{ApiConfig.BaseUrl}/client/clients", payload);
         showRegisterModal = false;
         await LoadData();
     }
@@ -251,7 +251,7 @@
         };
 
         await Http.PutAsJsonAsync(
-            $"http://localhost:8080/api/v1/client/clients/{editClient.client_id}",
+            $"{ApiConfig.BaseUrl}/client/clients/{editClient.client_id}",
             payload
         );
 
@@ -271,23 +271,23 @@
 
     async Task DeleteConfirmed()
     {
-        await Http.DeleteAsync($"http://localhost:8080/api/v1/client/clients/{selectedItem.client_id}");
+        await Http.DeleteAsync($"{ApiConfig.BaseUrl}/client/clients/{selectedItem.client_id}");
         showModal = false;
         await LoadData();
     }
 
     class Client
     {
-        public string client_id { get; set; }
+        public string? client_id { get; set; }
         public int nit { get; set; }
-        public string nombre { get; set; }
-        public string correo { get; set; }
-        public string telefono { get; set; }
-        public string direccion { get; set; }
+        public string? nombre { get; set; }
+        public string? correo { get; set; }
+        public string? telefono { get; set; }
+        public string? direccion { get; set; }
     }
 
     class ApiResponse
     {
-        public List<Client> data { get; set; }
+        public List<Client>? data { get; set; }
     }
 }
