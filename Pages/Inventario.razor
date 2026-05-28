@@ -191,7 +191,7 @@ public void Dispose()
 
     async Task LoadData()
     {
-        var response = await Http.GetFromJsonAsync<ApiResponse>("http://localhost:8080/api/v1/insumo/insumos");
+        var response = await Http.GetFromJsonAsync<ApiResponse>($"{ApiConfig.BaseUrl}/insumo/insumos");
         insumos = response.data;
         filteredInsumos = insumos;
     }
@@ -213,7 +213,7 @@ public void Dispose()
 
     async Task DeleteConfirmed()
     {
-        await Http.DeleteAsync($"http://localhost:8080/api/v1/insumo/insumos/{selectedItem.insumo_id}");
+        await Http.DeleteAsync($"{ApiConfig.BaseUrl}/insumo/insumos/{selectedItem.insumo_id}");
         showModal = false;
         await LoadData();
     }
@@ -249,7 +249,7 @@ public void Dispose()
         };
 
         await Http.PutAsJsonAsync(
-            $"http://localhost:8080/api/v1/insumo/insumos/{editInsumo.insumo_id}",
+            $"{ApiConfig.BaseUrl}/insumo/insumos/{editInsumo.insumo_id}",
             payload
         );
 
@@ -303,7 +303,7 @@ public void Dispose()
             ["Cantidad"] = newInsumo.Cantidad,
             ["Medida"] = newInsumo.Medida,
         };
-        await Http.PostAsJsonAsync("http://localhost:8080/api/v1/insumo/insumos", payload);
+        await Http.PostAsJsonAsync($"{ApiConfig.BaseUrl}/insumo/insumos", payload);
         showRegisterModal = false;
         await LoadData();
     }
@@ -321,8 +321,8 @@ public void Dispose()
         try
         {
             var response = await Http.GetFromJsonAsync<GastoApiResponse>(
-                "http://localhost:8080/api/v1/Gasto/gasto");
-            var raw = await Http.GetStringAsync("http://localhost:8080/api/v1/Gasto/gasto");
+                $"{ApiConfig.BaseUrl}/Gasto/gasto");
+            var raw = await Http.GetStringAsync($"{ApiConfig.BaseUrl}/Gasto/gasto");
             Console.WriteLine($"JSON crudo: {raw}");
             Console.WriteLine($"Buscando insumo_id: '{item.insumo_id}'");
             gastosInsumo = response?.data
@@ -345,29 +345,29 @@ public void Dispose()
     
     class Gasto
     {
-        public string gasto_id { get; set; }
-        public string Descripcion { get; set; }
+        public string? gasto_id { get; set; }
+        public string? Descripcion { get; set; }
         public int Costo { get; set; }
-        public string Fecha { get; set; }
-        public string insumo_id { get; set; }
-        public string Tipo { get; set; }
+        public string? Fecha { get; set; }
+        public string? insumo_id { get; set; }
+        public string? Tipo { get; set; }
     }
 
     class Insumo
     {
-        public string insumo_id { get; set; }
-        public string Descripcion { get; set; }
+        public string? insumo_id { get; set; }
+        public string? Descripcion { get; set; }
         public int Cantidad { get; set; }
-        public string Medida { get; set; }
+        public string? Medida { get; set; }
     }
 
     class ApiResponse
     {
-        public List<Insumo> data { get; set; }
+        public List<Insumo>? data { get; set; }
     }
 
     class GastoApiResponse
     {
-        public List<Gasto> data { get; set; }
+        public List<Gasto>? data { get; set; }
     }
 }

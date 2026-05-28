@@ -14,8 +14,8 @@ await builder.Build().RunAsync();
 
 public class SidebarService
 {
-    public RenderFragment SidebarButtons { get; private set; }
-    public event Action OnChange;
+    public RenderFragment? SidebarButtons { get; private set; }
+    public event Action? OnChange;
 
     public void SetButtons(RenderFragment buttons)
     {

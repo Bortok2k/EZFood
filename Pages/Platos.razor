@@ -120,7 +120,7 @@
     List<Plato> filteredPlatos = new();
     Plato editPlato = new();
     Plato newPlato = new();
-    Plato selectedItem;
+    Plato? selectedItem;
 
     bool showModal = false;
     bool showRegisterModal = false;
@@ -143,7 +143,7 @@
 
     async Task LoadData()
     {
-        var response = await Http.GetFromJsonAsync<ApiResponse>("http://localhost:8080/api/v1/Plato/Platos");
+        var response = await Http.GetFromJsonAsync<ApiResponse>($"{ApiConfig.BaseUrl}/Plato/Platos");
         platos = response.data;
         filteredPlatos = platos;
     }
@@ -186,7 +186,7 @@
             ["Precio"] = newPlato.Precio
         };
 
-        await Http.PostAsJsonAsync("http://localhost:8080/api/v1/Plato/Platos", payload);
+        await Http.PostAsJsonAsync($"{ApiConfig.BaseUrl}/Plato/Platos", payload);
         showRegisterModal = false;
         await LoadData();
     }
@@ -220,7 +220,7 @@
         };
 
         await Http.PutAsJsonAsync(
-            $"http://localhost:8080/api/v1/Plato/Platos/{editPlato.plato_id}",
+            $"{ApiConfig.BaseUrl}/Plato/Platos/{editPlato.plato_id}",
             payload
         );
 
@@ -243,20 +243,20 @@
 
     async Task DeleteConfirmed()
     {
-        await Http.DeleteAsync($"http://localhost:8080/api/v1/Plato/Platos/{selectedItem.plato_id}");
+        await Http.DeleteAsync($"{ApiConfig.BaseUrl}/Plato/Platos/{selectedItem.plato_id}");
         showModal = false;
         await LoadData();
     }
 
     class Plato
     {
-        public string plato_id { get; set; }
-        public string Descripcion { get; set; }
+        public string? plato_id { get; set; }
+        public string? Descripcion { get; set; }
         public int Precio { get; set; }
     }
 
     class ApiResponse
     {
-        public List<Plato> data { get; set; }
+        public List<Plato>? data { get; set; }
     }
 }

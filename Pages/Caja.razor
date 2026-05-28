@@ -245,8 +245,8 @@
 @code {
     bool showEliminarOrdenModal = false;
     bool showEditarModal = false;
-    Orden ordenEliminar;
-    Orden ordenEditando;
+    Orden? ordenEliminar;
+    Orden? ordenEditando;
     List<PlatoOrden> platosEditando = new();
     List<Plato> platos = new();
     List<Orden> ordenes = new();
@@ -255,7 +255,7 @@
 
     bool showResumenModal = false;
     bool showPagoModal = false;
-    Orden ordenCobrar;
+    Orden? ordenCobrar;
     int efectivoRecibido = 0;
 
     protected override async Task OnInitializedAsync()
@@ -274,7 +274,7 @@
         try
         {
             var response = await Http.GetFromJsonAsync<PlatoApiResponse>(
-                "http://localhost:8080/api/v1/Plato/Platos");
+                $"{ApiConfig.BaseUrl}/Plato/Platos");
             platos = response?.data ?? new List<Plato>();
         }
         catch { platos = new List<Plato>(); }
@@ -285,7 +285,7 @@
         try
         {
             var response = await Http.GetFromJsonAsync<OrdenApiResponse>(
-                "http://localhost:8080/api/v1/Orden/ordenes");
+                $"{ApiConfig.BaseUrl}/Orden/ordenes");
             ordenes = response?.data
                 ?.Where(o => o.estado_nombre == "Preparacion")
                 .ToList() ?? new List<Orden>();
@@ -334,7 +334,7 @@
             ["platos"] = platosPayload
         };
 
-        await Http.PostAsJsonAsync("http://localhost:8080/api/v1/Orden/ordenes", payload);
+        await Http.PostAsJsonAsync($"{ApiConfig.BaseUrl}/Orden/ordenes", payload);
 
         // Limpiar selección
         platosSeleccionados.Clear();
@@ -363,7 +363,7 @@
 
         // Cambiar estado a pagado (id_estado = 2)
         await Http.PatchAsJsonAsync(
-            $"http://localhost:8080/api/v1/Orden/ordenes/{ordenCobrar.orden_id}/estado",
+            $"{ApiConfig.BaseUrl}/Orden/ordenes/{ordenCobrar.orden_id}/estado",
             new Dictionary<string, object> { ["id_estado"] = 4 }
         );
 
@@ -457,7 +457,7 @@
         };
 
         await Http.PutAsJsonAsync(
-            $"http://localhost:8080/api/v1/Orden/ordenes/{ordenEditando.orden_id}",
+            $"{ApiConfig.BaseUrl}/Orden/ordenes/{ordenEditando.orden_id}",
             payload
         );
 
@@ -475,7 +475,7 @@
     async Task EliminarOrdenConfirmado()
     {
         await Http.DeleteAsync(
-            $"http://localhost:8080/api/v1/Orden/ordenes/{ordenEliminar.orden_id}"
+            $"{ApiConfig.BaseUrl}/Orden/ordenes/{ordenEliminar.orden_id}"
         );
         showEliminarOrdenModal = false;
         ordenEliminar = null;
@@ -489,15 +489,15 @@
 
     class Plato
     {
-        public string plato_id { get; set; }
-        public string Descripcion { get; set; }
+        public string? plato_id { get; set; }
+        public string? Descripcion { get; set; }
         public int Precio { get; set; }
     }
 
     class PlatoOrden
     {
-        public string plato_id { get; set; }
-        public string Descripcion { get; set; }
+        public string? plato_id { get; set; }
+        public string? Descripcion { get; set; }
         public int cantidad { get; set; }
         public int subtotal { get; set; }
         public int Precio { get; set; }
@@ -505,13 +505,13 @@
 
     class Orden
     {
-        public string orden_id { get; set; }
+        public string? orden_id { get; set; }
         public int mesa { get; set; }
-        public string estado_nombre { get; set; }
+        public string? estado_nombre { get; set; }
         public int total { get; set; }
         public List<PlatoOrden> platos { get; set; } = new();
     }
 
-    class PlatoApiResponse { public List<Plato> data { get; set; } }
-    class OrdenApiResponse { public List<Orden> data { get; set; } }
+    class PlatoApiResponse { public List<Plato>? data { get; set; } }
+    class OrdenApiResponse { public List<Orden>? data { get; set; } }
 }
