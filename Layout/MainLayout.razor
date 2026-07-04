@@ -1,15 +1,37 @@
 ﻿@inherits LayoutComponentBase
+@inject NavigationManager Nav
 @inject SidebarService SidebarService
 @implements IDisposable
 
 <div class="main-layout">
     <div class="sidebar">
-        <div class="profile-circle"></div>
+        <div class="profile-circle"
+             style="@(AuthState.IsAdmin ? "cursor:pointer;" : "cursor:default;")"
+             @onclick="IrAHome">
+        </div>
+
+        @if (AuthState.IsAuthenticated)
+        {
+            <span style="color:white; font-size:13px; text-align:center; padding:0 10px;">
+                @AuthState.UserName
+            </span>
+        }
+
         @if (SidebarService.SidebarButtons != null)
         {
             @SidebarService.SidebarButtons
         }
+
+        @if (AuthState.IsAuthenticated)
+        {
+            <button class="side-button"
+                    style="background:#cc4444; margin-top:auto; margin-bottom:20px;"
+                    @onclick="CerrarSesion">
+                Cerrar sesión
+            </button>
+        }
     </div>
+
     <div class="main-content">
         @Body
     </div>
@@ -19,6 +41,27 @@
     protected override void OnInitialized()
     {
         SidebarService.OnChange += StateHasChanged;
+
+        var uri = Nav.Uri;
+        var isLoginPage = uri.Contains("/login");
+
+        if (!isLoginPage && !AuthState.IsAuthenticated)
+        {
+            Nav.NavigateTo("/login");
+            return;
+        }
+    }
+
+    void IrAHome()
+    {
+        if (AuthState.IsAdmin)
+            Nav.NavigateTo("/");
+    }
+
+    void CerrarSesion()
+    {
+        AuthState.Logout();
+        Nav.NavigateTo("/login");
     }
 
     public void Dispose()

@@ -1,0 +1,184 @@
+﻿@page "/usuarios/registrar"
+@inject HttpClient Http
+@inject NavigationManager Nav
+
+<div class="content" style="padding:30px 40px;">
+    <h2>Registrar Usuario</h2>
+
+    <div style="background:white; border-radius:20px; padding:30px; max-width:500px;">
+
+        <!-- Selector de rol primero -->
+        <div class="register-field" style="margin-bottom:20px;">
+            <label>Tipo de usuario</label>
+            <select @bind="rolSeleccionado"
+                    style="padding:8px 15px; border-radius:20px; border:1px solid #ddd;
+                           width:100%; margin-top:5px;">
+                <option value="2">Empleado</option>
+                <option value="1">Administrador</option>
+            </select>
+        </div>
+
+        <div class="register-grid">
+            <!-- Campos comunes -->
+            <div class="register-field">
+                <label>Nombre</label>
+                <input @bind="form.first_name" />
+            </div>
+            <div class="register-field">
+                <label>Apellido</label>
+                <input @bind="form.last_name" />
+            </div>
+            <div class="register-field">
+                <label>Usuario</label>
+                <input @bind="form.user_name" />
+            </div>
+            <div class="register-field">
+                <label>Contraseña</label>
+                <input type="password" @bind="form.password" />
+            </div>
+            <div class="register-field">
+                <label>Correo</label>
+                <input @bind="form.mail" />
+            </div>
+            <div class="register-field">
+                <label>Teléfono</label>
+                <input @bind="form.phone" />
+            </div>
+
+            <!-- Campos adicionales solo para empleado -->
+            @if (rolSeleccionado == 2)
+            {
+                <div class="register-field">
+                    <label>N° Documento</label>
+                    <input @bind="form.id_doc" />
+                </div>
+                <div class="register-field">
+                    <label>Salario</label>
+                    <input type="number" @bind="form.salary" />
+                </div>
+            }
+        </div>
+
+        @if (!string.IsNullOrEmpty(mensaje))
+        {
+            <p style="color:@(exito ? "green" : "red"); font-size:13px; margin-top:10px;">
+                @mensaje
+            </p>
+        }
+
+        <div style="display:flex; gap:10px; margin-top:20px;">
+            <button class="register-btn" style="background:gray; width:35%;"
+                    @onclick='() => Nav.NavigateTo("/")'>
+                Cancelar
+            </button>
+            <button class="register-btn" style="width:55%;"
+                    @onclick="Registrar">
+                Registrar Usuario
+            </button>
+        </div>
+    </div>
+</div>
+
+@code {
+    int rolSeleccionado = 2;
+    string mensaje = "";
+    bool exito = false;
+    UsuarioForm form = new();
+
+    protected override void OnInitialized()
+    {
+        if (!AuthState.IsAdmin)
+            Nav.NavigateTo("/login");
+    }
+    
+    async Task Registrar()
+    {
+        if (string.IsNullOrWhiteSpace(form.user_name) ||
+            string.IsNullOrWhiteSpace(form.password) ||
+            string.IsNullOrWhiteSpace(form.first_name)) return;
+
+        try
+        {
+            string endpoint;
+            object payload;
+
+            if (rolSeleccionado == 2)
+            {
+                if (string.IsNullOrWhiteSpace(form.id_doc))
+                {
+                    mensaje = "El número de documento es requerido para empleados.";
+                    exito = false;
+                    return;
+                }
+
+                endpoint = $"{ApiConfig.BaseUrl}/employee/create";
+                payload = new
+                {
+                    first_name = form.first_name,
+                    last_name = form.last_name,
+                    mail = form.mail,
+                    phone = form.phone,
+                    second_name = form.second_name,
+                    user_name = form.user_name,
+                    password = form.password,
+                    id_doc = form.id_doc,
+                    salary = form.salary
+                };
+            }
+            else
+            {
+                endpoint = $"{ApiConfig.BaseUrl}/user/create";
+                payload = new
+                {
+                    first_name = form.first_name,
+                    last_name = form.last_name,
+                    mail = form.mail,
+                    phone = form.phone,
+                    second_name = form.second_name,
+                    user_name = form.user_name,
+                    password = form.password
+                };
+            }
+
+            // ← Agregar token al header
+            var request = new HttpRequestMessage(HttpMethod.Post, endpoint);
+            request.Headers.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", AuthState.Token);
+            request.Content = JsonContent.Create(payload);
+
+            var response = await Http.SendAsync(request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                exito = true;
+                mensaje = "Usuario registrado correctamente.";
+                form = new UsuarioForm();
+                rolSeleccionado = 2;
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                exito = false;
+                mensaje = "Error al registrar: " + error;
+            }
+        }
+        catch
+        {
+            exito = false;
+            mensaje = "Error al conectar con el servidor.";
+        }
+    }
+
+    class UsuarioForm
+    {
+        public string first_name { get; set; } = "";
+        public string last_name { get; set; } = "";
+        public string second_name { get; set; } = "";
+        public string user_name { get; set; } = "";
+        public string password { get; set; } = "";
+        public string mail { get; set; } = "";
+        public string phone { get; set; } = "";
+        public string id_doc { get; set; } = "";
+        public int salary { get; set; } = 0;
+    }
+}
