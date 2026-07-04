@@ -6,41 +6,209 @@
 
 
     <!-- Contenido -->
+
+
     <div class="content">
+
+    <!-- Filtro de fechas y mes -->
+    <div style="display:flex; gap:15px; align-items:center; margin-bottom:15px; flex-wrap:wrap;">
+
+        <!-- Selector de vista -->
+        <div style="display:flex; gap:8px;">
+            <button @onclick='() => CambiarVista("filtro")'
+                    style="padding:8px 18px; border-radius:20px; border:none; cursor:pointer;
+                       background:@(vistaActual == "filtro" ? "#F28C45" : "#ccc");
+                       color:@(vistaActual == "filtro" ? "white" : "#333");">
+                Por fechas
+            </button>
+            <button @onclick='() => CambiarVista("mensual")'
+                    style="padding:8px 18px; border-radius:20px; border:none; cursor:pointer;
+                       background:@(vistaActual == "mensual" ? "#F28C45" : "#ccc");
+                       color:@(vistaActual == "mensual" ? "white" : "#333");">
+                Mensual
+            </button>
+        </div>
+
+        @if (vistaActual == "filtro")
+        {
+            <div style="display:flex; align-items:center; gap:8px;">
+                <label style="font-size:14px; font-weight:500;">Desde:</label>
+                <input type="date" value="@fechaDesde"
+                       @oninput="e => { fechaDesde = e.Value?.ToString(); FiltrarDatos(); }"
+                       style="padding:8px 12px; border-radius:20px; border:none; background:white;" />
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+                <label style="font-size:14px; font-weight:500;">Hasta:</label>
+                <input type="date" value="@fechaHasta"
+                       @oninput="e => { fechaHasta = e.Value?.ToString(); FiltrarDatos(); }"
+                       style="padding:8px 12px; border-radius:20px; border:none; background:white;" />
+            </div>
+            <button @onclick="LimpiarFiltro"
+                    style="background:#888; border:none; padding:8px 20px;
+                           border-radius:20px; color:white; cursor:pointer; font-size:13px;">
+                Limpiar
+            </button>
+        }
+
+        @if (vistaActual == "mensual")
+        {
+            <div style="display:flex; align-items:center; gap:8px;">
+                <label style="font-size:14px; font-weight:500;">Mes:</label>
+                <select @bind="mesSeleccionado" @bind:after="FiltrarDatos"
+                        style="padding:8px 15px; border-radius:20px; border:none; background:white;">
+                    <option value="01">Enero</option>
+                    <option value="02">Febrero</option>
+                    <option value="03">Marzo</option>
+                    <option value="04">Abril</option>
+                    <option value="05">Mayo</option>
+                    <option value="06">Junio</option>
+                    <option value="07">Julio</option>
+                    <option value="08">Agosto</option>
+                    <option value="09">Septiembre</option>
+                    <option value="10">Octubre</option>
+                    <option value="11">Noviembre</option>
+                    <option value="12">Diciembre</option>
+                </select>
+                <select @bind="anioSeleccionado" @bind:after="FiltrarDatos"
+                        style="padding:8px 15px; border-radius:20px; border:none; background:white;">
+                    @for (int a = DateTime.Now.Year; a >= DateTime.Now.Year - 3; a--)
+                    {
+                        <option value="@a">@a</option>
+                    }
+                </select>
+            </div>
+        }
+
+        <span style="font-size:13px; color:#555;">
+            Balance período: <strong>$@(totalIngresosFiltrado - totalGastosFiltrado)</strong>
+        </span>
+    </div>
+
+        <!-- Paneles — ESTO FALTABA -->
         <div class="balance-panels">
 
             <!-- Panel Ingresos -->
             <div class="panel panel-ingresos">
-                <h3>Ingresos</h3>
-                @foreach (var orden in ordenesPagadas ?? new List<Orden>())
-                {
-                    <div class="balance-item-Ingreso">
-                        <span>@orden.fecha</span>
-                        <span>$@orden.total</span>
-                    </div>
-                }
+                <h3 style="margin:0; flex-shrink:0;">Ingresos (@ordenesFiltradas.Count)</h3>
+                <div style="overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:10px;">
+                    @foreach (var orden in ordenesFiltradas)
+                    {
+                        <div class="balance-item-Ingreso">
+                            <span>@orden.fecha</span>
+                            <span>$@orden.total</span>
+                        </div>
+                    }
+                    @if (ordenesFiltradas.Count == 0)
+                    {
+                        <p style="color:#888; font-size:13px; text-align:center;">
+                            Sin ingresos en el período
+                        </p>
+                    }
+                </div>
             </div>
 
             <!-- Panel Gastos -->
             <div class="panel panel-gastos">
-                <h3>Gastos</h3>
-                @foreach (var gasto in gastos ?? new List<Gasto>())
-                {
-                    <div class="balance-item-Gasto">
-                        <span>@gasto.Fecha</span>
-                        <span>@gasto.Descripcion</span>
-                        <span>$@gasto.Costo</span>
-                    </div>
-                }
+                <h3 style="margin:0; flex-shrink:0;">Gastos (@gastosFiltrados.Count)</h3>
+                <div style="overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:10px;">
+                    @foreach (var gasto in gastosFiltrados)
+                    {
+                        <div class="balance-item-Gasto">
+                            <span>@gasto.Fecha</span>
+                            <span>@gasto.Descripcion</span>
+                            <span>$@gasto.Costo</span>
+                            <div style="display:flex; gap:6px; margin-left:auto;">
+                                <button @onclick="() => AbrirEditarGasto(gasto)"
+                                        style="background:transparent; border:none; cursor:pointer; font-size:15px;">
+                                    ✏️
+                                </button>
+                                <button @onclick="() => ConfirmarEliminarGasto(gasto)"
+                                        style="background:transparent; border:none; cursor:pointer; font-size:15px;">
+                                    🗑️
+                                </button>
+                            </div>
+                        </div>
+                    }
+                    @if (gastosFiltrados.Count == 0)
+                    {
+                        <p style="color:#888; font-size:13px; text-align:center;">
+                            Sin gastos en el período
+                        </p>
+                    }
+                </div>
             </div>
 
         </div>
 
-        <!-- Balance total -->
-        <div class="balance-total">
-            <span>Balance: $@(totalIngresos - totalGastos)</span>
+    <!-- Balance total -->
+    <div class="balance-total">
+        <span>
+            Balance @(vistaActual == "mensual" ? $"{mesSeleccionado}/{anioSeleccionado}" : "total"):
+            $@(totalIngresosFiltrado - totalGastosFiltrado)
+        </span>
+    </div>
+
+    </div>
+
+
+
+@* Modal editar gasto *@
+@if (showEditarGastoModal)
+{
+    <div class="comfirm-overlay">
+        <div class="comfirm-box">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h3 style="margin:0; color:white;">Editar Gasto</h3>
+                <button @onclick="() => showEditarGastoModal = false"
+                        style="background:transparent; border:none; color:white;
+                                   font-size:22px; cursor:pointer;">
+                    ✕
+                </button>
+            </div>
+            <div class="register-grid">
+                <div class="register-field" style="grid-column:span 2;">
+                    <label>Descripción</label>
+                    <input @bind="editGasto.Descripcion" />
+                </div>
+                <div class="register-field">
+                    <label>Costo</label>
+                    <input type="number" @bind="editGasto.Costo" />
+                </div>
+                <div class="register-field">
+                    <label>Fecha</label>
+                    <input type="date"
+                           value="@editGasto.Fecha"
+                           @oninput="e => editGasto.Fecha = e.Value?.ToString()" />
+                </div>
+            </div>
+            <div style="display:flex; gap:10px; justify-content:center; margin-top:10px;">
+                <button class="register-btn" style="background:gray; width:35%;"
+                        @onclick="() => showEditarGastoModal = false">
+                    Cancelar
+                </button>
+                <button class="register-btn" style="width:45%;"
+                        @onclick="GuardarEditarGasto">
+                    Guardar
+                </button>
+            </div>
         </div>
     </div>
+}
+
+@* Modal confirmar eliminar gasto *@
+@if (showEliminarGastoModal)
+{
+    <div class="comfirm-overlay">
+        <div class="comfirm-box">
+            <p>¿Está seguro que desea eliminar el gasto "@gastoSeleccionado?.Descripcion"?</p>
+            <div class="modal-buttons">
+                <button class="no" @onclick="() => showEliminarGastoModal = false">No</button>
+                <button class="yes" @onclick="EliminarGastoConfirmado">Sí</button>
+            </div>
+        </div>
+    </div>
+}
+
 
 @* Modal registro gasto *@
 @if (showRegisterModal)
@@ -123,6 +291,24 @@
 }
 
 @code {
+    // Variables CRUD gastos
+    
+    bool showEditarGastoModal = false;
+    bool showEliminarGastoModal = false;
+    Gasto editGasto = new();
+    Gasto gastoSeleccionado = null;
+    // Variables de filtro
+    string fechaDesde = "";
+    string fechaHasta = "";
+
+    // Listas filtradas
+    List<Orden> ordenesFiltradas = new();
+    List<Gasto> gastosFiltrados = new();
+
+    // Totales filtrados
+    int totalIngresosFiltrado => ordenesFiltradas?.Sum(o => o.total) ?? 0;
+    int totalGastosFiltrado => gastosFiltrados?.Sum(g => g.Costo) ?? 0;
+
     List<Orden> ordenesPagadas = new();
     List<Gasto> gastos = new();
     string tipoGasto = "otro";
@@ -134,7 +320,62 @@
 
     bool showRegisterModal = false;
     Gasto newGasto = new();
+    // Variables de vista
+    string vistaActual = "filtro";
+    string mesSeleccionado = DateTime.Now.Month.ToString("D2");
+    int anioSeleccionado = DateTime.Now.Year;
 
+    void CambiarVista(string vista)
+    {
+    vistaActual = vista;
+    fechaDesde = "";
+    fechaHasta = "";
+    FiltrarDatos();
+    }
+    void FiltrarDatos()
+{
+    var ordenes = ordenesPagadas ?? new List<Orden>();
+    var gastosList = gastos ?? new List<Gasto>();
+
+    if (vistaActual == "mensual")
+    {
+        // Filtrar por mes y año seleccionado
+        var prefijo = $"{anioSeleccionado}-{mesSeleccionado}";
+        ordenes = ordenes
+            .Where(o => o.fecha != null && o.fecha.StartsWith(prefijo))
+            .ToList();
+        gastosList = gastosList
+            .Where(g => g.Fecha != null && g.Fecha.StartsWith(prefijo))
+            .ToList();
+    }
+    else
+    {
+        // Filtrar por rango de fechas
+        if (!string.IsNullOrWhiteSpace(fechaDesde))
+        {
+            ordenes = ordenes
+                .Where(o => string.Compare(o.fecha, fechaDesde) >= 0)
+                .ToList();
+            gastosList = gastosList
+                .Where(g => string.Compare(g.Fecha, fechaDesde) >= 0)
+                .ToList();
+        }
+
+        if (!string.IsNullOrWhiteSpace(fechaHasta))
+        {
+            ordenes = ordenes
+                .Where(o => string.Compare(o.fecha, fechaHasta) <= 0)
+                .ToList();
+            gastosList = gastosList
+                .Where(g => string.Compare(g.Fecha, fechaHasta) <= 0)
+                .ToList();
+        }
+    }
+
+    ordenesFiltradas = ordenes;
+    gastosFiltrados = gastosList;
+    StateHasChanged();
+}
     protected override async Task OnInitializedAsync()
     {
         SidebarService.SetButtons(
@@ -153,7 +394,6 @@
 
     async Task LoadData()
     {
-        // Órdenes pagadas
         try
         {
             var ordenesResponse = await Http.GetFromJsonAsync<OrdenApiResponse>(
@@ -164,7 +404,6 @@
         }
         catch { ordenesPagadas = new List<Orden>(); }
 
-        // Gastos
         try
         {
             var gastosResponse = await Http.GetFromJsonAsync<GastoApiResponse>(
@@ -173,7 +412,6 @@
         }
         catch { gastos = new List<Gasto>(); }
 
-        // Insumos ← nuevo
         try
         {
             var insumosResponse = await Http.GetFromJsonAsync<InsumoApiResponse>(
@@ -181,6 +419,16 @@
             insumos = insumosResponse?.data ?? new List<Insumo>();
         }
         catch { insumos = new List<Insumo>(); }
+
+        // Inicializar listas filtradas con todos los datos
+        FiltrarDatos();
+    }
+
+    void LimpiarFiltro()
+    {
+        fechaDesde = "";
+        fechaHasta = "";
+        FiltrarDatos();
     }
 
     void OnTipoChanged(ChangeEventArgs e)
@@ -230,6 +478,52 @@
 
         await Http.PostAsJsonAsync($"{ApiConfig.BaseUrl}/Gasto/gasto", payload);
         showRegisterModal = false;
+        await LoadData();
+    }
+    void AbrirEditarGasto(Gasto gasto)
+    {
+        editGasto = new Gasto
+        {
+            gasto_id = gasto.gasto_id,
+            Descripcion = gasto.Descripcion,
+            Costo = gasto.Costo,
+            Fecha = gasto.Fecha
+        };
+        showEditarGastoModal = true;
+        StateHasChanged();
+    }
+
+    async Task GuardarEditarGasto()
+    {
+        if (string.IsNullOrWhiteSpace(editGasto.Descripcion)) return;
+
+        var payload = new Dictionary<string, object>
+        {
+            ["Descripcion"] = editGasto.Descripcion,
+            ["Costo"] = editGasto.Costo,
+            ["Fecha"] = editGasto.Fecha ?? DateTime.Now.ToString("yyyy-MM-dd")
+        };
+
+        await Http.PutAsJsonAsync(
+            $"{ApiConfig.BaseUrl}/Gasto/gasto/{editGasto.gasto_id}", payload);
+
+        showEditarGastoModal = false;
+        await LoadData();
+    }
+
+    void ConfirmarEliminarGasto(Gasto gasto)
+    {
+        gastoSeleccionado = gasto;
+        showEliminarGastoModal = true;
+        StateHasChanged();
+    }
+
+    async Task EliminarGastoConfirmado()
+    {
+        await Http.DeleteAsync(
+            $"{ApiConfig.BaseUrl}/Gasto/gasto/{gastoSeleccionado.gasto_id}");
+        showEliminarGastoModal = false;
+        gastoSeleccionado = null;
         await LoadData();
     }
 

@@ -1,45 +1,65 @@
 ﻿@page "/"
 @implements IDisposable
 @inject SidebarService SidebarService
-    <!-- Content -->
-    <div class="content">
+@inject NavigationManager Nav
 
-        <div class="grid">
-
-            <div class="card active" @onclick="@(() => GoTo("/caja"))">
-                <div class="icon">💻</div>
-                <p>Caja</p>
-            </div>
-
-            <div class="card" @onclick="@(() => GoTo("/factura"))">
-                <div class="icon">📄</div>
-                <p>Factura Electrónica</p>
-            </div>
-
-            <div class="card" @onclick="@(() => GoTo("/gestion"))">
-                <div class="icon">📋</div>
-                <p>Gestión</p>
-            </div>
-
-            <div class="card" @onclick="@(() => GoTo("/ezbot"))">
-                <div class="icon">🤖</div>
-                <p>EZBot</p>
-            </div>
-
+<!-- Content -->
+<div class="content">
+    <div class="grid">
+        <div class="card active" @onclick="@(() => GoTo("/caja"))">
+            <div class="icon">💻</div>
+            <p>Caja</p>
         </div>
-
+        <div class="card" @onclick="@(() => GoTo("/factura"))">
+            <div class="icon">📄</div>
+            <p>Factura Electrónica</p>
+        </div>
+        <div class="card" @onclick="@(() => GoTo("/gestion"))">
+            <div class="icon">📋</div>
+            <p>Gestión</p>
+        </div>
+        <div class="card" @onclick="@(() => GoTo("/ezbot"))">
+            <div class="icon">🤖</div>
+            <p>EZBot</p>
+        </div>
     </div>
+</div>
 
-
-
-@code{
-    protected override async Task OnInitializedAsync()
+@code {
+    protected override void OnInitialized()
     {
-        SidebarService.SetButtons(null);
+        if (!AuthState.IsAuthenticated)
+        {
+            Nav.NavigateTo("/login");
+            return;
+        }
+
+        if (AuthState.IsEmployee)
+        {
+            Nav.NavigateTo("/caja");
+            return;
+        }
+
+        // Solo admin ve el botón de registrar usuario
+        if (AuthState.IsAdmin)
+        {
+            SidebarService.SetButtons(
+                @<button class="side-button"@onclick='() => Nav.NavigateTo("/usuarios/registrar")'>
+    Registrar Usuario
+</button>
+            );
+        }
+        else
+        {
+            SidebarService.SetButtons(null);
+        }
     }
+
     public void Dispose()
     {
+        SidebarService.Clear();
     }
+
     void GoTo(string url)
     {
         Nav.NavigateTo(url);

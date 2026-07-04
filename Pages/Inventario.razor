@@ -5,7 +5,6 @@
 @implements IDisposable
 
 <div class="content">
-
     <div class="search-bar">
         <input placeholder="Buscar..." value="@searchText" @oninput="OnSearch" />
     </div>
@@ -18,19 +17,22 @@
             <span></span>
         </div>
 
-        @foreach (var item in filteredInsumos)
-        {
-            <div class="table-row">
-                <span>@item.Descripcion</span>
-                <span>@item.Cantidad</span>
-                <span>@item.Medida</span>
-                <div class="actions">
-                    <button @onclick="() => VerHistorial(item)">📋</button>
-                    <button @onclick="() => Edit(item)">✏️</button>
-                    <button @onclick="() => ConfirmDelete(item)">🗑️</button>
+        <!-- Contenedor con scroll -->
+        <div style="overflow-y:auto; max-height:70vh; display:flex; flex-direction:column; gap:10px;">
+            @foreach (var item in filteredInsumos)
+            {
+                <div class="table-row">
+                    <span>@item.Descripcion</span>
+                    <span>@item.Cantidad</span>
+                    <span>@item.Medida</span>
+                    <div class="actions">
+                        <button @onclick="() => VerHistorial(item)">📋</button>
+                        <button @onclick="() => Edit(item)">✏️</button>
+                        <button @onclick="() => ConfirmDelete(item)">🗑️</button>
+                    </div>
                 </div>
-            </div>
-        }
+            }
+        </div>
     </div>
 </div>  <!-- MODAL -->
 
@@ -76,7 +78,7 @@
                         <span>$@g.Costo</span>
                     </div>
                 }
-                <div style="margin-top:15px; text-align:right; color:#F28C45; font-weight:bold;">
+                <div style="margin-top:15px; text-align:right; color:#000000; font-weight:bold;">
                     Total: $@gastosInsumo.Sum(g => g.Costo)
                 </div>
             }
