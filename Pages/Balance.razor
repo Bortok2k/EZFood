@@ -105,6 +105,9 @@
                         </p>
                     }
                 </div>
+                <div class="balance-item-Ingreso">
+                    <p>$@(totalIngresosFiltrado)</p>
+                </div>
             </div>
 
             <!-- Panel Gastos -->
@@ -136,6 +139,10 @@
                         </p>
                     }
                 </div>
+                <div class="balance-item-Gasto">
+                <p>$@(totalGastosFiltrado)</p>
+                </div>
+            
             </div>
 
         </div>
@@ -237,44 +244,66 @@
 
                 <div class="register-grid">
 
-                    @if (tipoGasto == "insumo")
-                    {
-                        <!-- Dropdown de insumos -->
-                        <div class="register-field" style="grid-column: span 2;">
-                            <label>Seleccionar Insumo</label>
-                            <select @onchange="OnInsumoSelected"
-                                    style="width:100%; padding:8px 12px; border-radius:20px;
-                                                   border:none; background:#ececec;">
-                                <option value="">-- Selecciona un insumo --</option>
-                                @foreach (var insumo in insumos)
-                                {
-                                    <option value="@insumo.insumo_id">@insumo.Descripcion</option>
-                                }
-                            </select>
-                        </div>
-                        <div class="register-field">
-                            <label>Descripción</label>
-                            <input value="@newGasto.Descripcion" readonly
-                                   style="background:#ddd;" />
-                        </div>
-                        <div class="register-field">
-                            <label>Costo</label>
-                            <input type="number" value="@newGasto.Costo"
-                                   @oninput="e => newGasto.Costo = int.TryParse(e.Value?.ToString(), out var v) ? v : 0" />
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="register-field" style="grid-column: span 2;">
-                            <label>Descripción</label>
-                            <input @bind="newGasto.Descripcion" />
-                        </div>
-                        <div class="register-field">
-                            <label>Costo</label>
-                            <input type="number" @bind="newGasto.Costo" />
-                        </div>
-                    }
+                @if (tipoGasto == "insumo")
+                {
+                    <div class="register-field" style="grid-column: span 2;">
+                        <label>Buscar Insumo</label>
+                        <input placeholder="Escribe para buscar..."
+                               value="@busquedaInsumo"
+                               @oninput="e => { busquedaInsumo = e.Value?.ToString(); FiltrarInsumos(); }"
+                               style="width:100%; padding:8px 12px; border-radius:20px;
+                              border:none; background:#ececec;" />
 
+                        @if (insumosFiltradosBusqueda.Count > 0 && !insumoSeleccionadoConfirmado)
+                        {
+                            <div style="background:white; border-radius:12px; margin-top:5px;
+                                    max-height:180px; overflow-y:auto; box-shadow:0 4px 12px rgba(0,0,0,0.1);">
+                                @foreach (var insumo in insumosFiltradosBusqueda)
+                                {
+                                    <div @onclick="() => SeleccionarInsumo(insumo)"
+                                         style="padding:10px 15px; cursor:pointer; font-size:13px;
+                                                                border-bottom:1px solid #eee;solid #eee; color:#333;"
+                                         onmouseover="this.style.background='#f5f5f5'"
+                                         onmouseout="this.style.background='white'">
+                                        @insumo.Descripcion
+                                    </div>
+                                }
+                            </div>
+                        }
+
+                        @if (insumoSeleccionadoConfirmado)
+                        {
+                            <div style="display:flex; align-items:center; gap:8px; margin-top:5px;">
+                                <span style="background:#F28C45; color:white; padding:4px 12px;
+                                         border-radius:15px; font-size:13px;">
+                                    ✓ @newGasto.Descripcion
+                                </span>
+                                <button @onclick="LimpiarInsumoSeleccionado"
+                                        style="background:transparent; border:none; cursor:pointer;
+                                           color:#888; font-size:18px;">
+                                    ✕
+                                </button>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="register-field">
+                        <label>Costo</label>
+                        <input type="number" @bind="newGasto.Costo" />
+                    </div>
+                }
+                else
+                {
+                    <!-- campos manuales para tipo "otro" -->
+                    <div class="register-field" style="grid-column: span 2;">
+                        <label>Descripción</label>
+                        <input @bind="newGasto.Descripcion" />
+                    </div>
+                    <div class="register-field">
+                        <label>Costo</label>
+                        <input type="number" @bind="newGasto.Costo" />
+                    </div>
+                }
                     <div class="register-field">
                         <label>Fecha</label>
                         <input type="date"
@@ -291,7 +320,12 @@
 }
 
 @code {
+
+    string busquedaInsumo = "";
+    bool insumoSeleccionadoConfirmado = false;
+    List<Insumo> insumosFiltradosBusqueda = new();
     // Variables CRUD gastos
+
     
     bool showEditarGastoModal = false;
     bool showEliminarGastoModal = false;
@@ -434,9 +468,11 @@
     void OnTipoChanged(ChangeEventArgs e)
     {
         tipoGasto = e.Value?.ToString() ?? "otro";
-        // Limpiar al cambiar tipo
         newGasto = new Gasto { Fecha = DateTime.Now.ToString("yyyy-MM-dd") };
         insumoSeleccionadoId = "";
+        busquedaInsumo = "";
+        insumoSeleccionadoConfirmado = false;
+        insumosFiltradosBusqueda = new List<Insumo>();
     }
 
     void OnInsumoSelected(ChangeEventArgs e)
@@ -525,6 +561,44 @@
         showEliminarGastoModal = false;
         gastoSeleccionado = null;
         await LoadData();
+    }
+
+    void FiltrarInsumos()
+    {
+        insumoSeleccionadoConfirmado = false;
+        if (string.IsNullOrWhiteSpace(busquedaInsumo))
+        {
+            insumosFiltradosBusqueda = new List<Insumo>();
+            return;
+        }
+
+        insumosFiltradosBusqueda = insumos
+            .Where(i => i.Descripcion != null &&
+                        i.Descripcion.ToLower().Contains(busquedaInsumo.ToLower()))
+            .Take(8) // ← máximo 8 resultados para no saturar la lista
+            .ToList();
+    }
+
+    void SeleccionarInsumo(Insumo insumo)
+    {
+        insumoSeleccionadoId = insumo.insumo_id;
+        newGasto.Descripcion = insumo.Descripcion;
+        newGasto.Costo = 0;
+        busquedaInsumo = insumo.Descripcion;
+        insumoSeleccionadoConfirmado = true;
+        insumosFiltradosBusqueda = new List<Insumo>();
+        StateHasChanged();
+    }
+
+    void LimpiarInsumoSeleccionado()
+    {
+        insumoSeleccionadoId = "";
+        newGasto.Descripcion = "";
+        newGasto.Costo = 0;
+        busquedaInsumo = "";
+        insumoSeleccionadoConfirmado = false;
+        insumosFiltradosBusqueda = new List<Insumo>();
+        StateHasChanged();
     }
 
     class Insumo
