@@ -1,6 +1,7 @@
 ﻿@inherits LayoutComponentBase
 @inject NavigationManager Nav
 @inject SidebarService SidebarService
+@inject IJSRuntime JS
 @implements IDisposable
 
 <div class="main-layout">
@@ -37,10 +38,18 @@
     </div>
 </div>
 
+
+
+
+
 @code {
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         SidebarService.OnChange += StateHasChanged;
+        AuthState.Init(JS);
+
+        // Cargar sesión desde localStorage
+        await AuthState.LoadSession();
 
         var uri = Nav.Uri;
         var isLoginPage = uri.Contains("/login");
@@ -52,16 +61,16 @@
         }
     }
 
+    async void CerrarSesion()
+    {
+        await AuthState.Logout();
+        Nav.NavigateTo("/login");
+    }
+
     void IrAHome()
     {
         if (AuthState.IsAdmin)
             Nav.NavigateTo("/");
-    }
-
-    void CerrarSesion()
-    {
-        AuthState.Logout();
-        Nav.NavigateTo("/login");
     }
 
     public void Dispose()
