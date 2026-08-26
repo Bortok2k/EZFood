@@ -89,7 +89,11 @@
                     result.user.user_name,
                     result.user.rol
                     );
+                AuthState.Token = result.token;
+                AuthState.UserName = result.user.user_name;
+                AuthState.Rol = result.user.rol;
 
+                await JS.InvokeVoidAsync("authStorage.set", AuthState.Token, AuthState.UserName, AuthState.Rol);
                 // Redirigir según rol
                 if (result.user.rol == 1)
                     Nav.NavigateTo("/");

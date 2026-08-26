@@ -91,13 +91,17 @@
             <div class="panel panel-ingresos">
                 <h3 style="margin:0; flex-shrink:0;">Ingresos (@ordenesFiltradas.Count)</h3>
                 <div style="overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:10px;">
-                    @foreach (var orden in ordenesFiltradas)
-                    {
-                        <div class="balance-item-Ingreso">
-                            <span>@orden.fecha</span>
-                            <span>$@orden.total</span>
-                        </div>
-                    }
+                @foreach (var orden in ordenesFiltradas)
+                {
+                    <div class="balance-item-Ingreso">
+                        <span>@orden.fecha</span>
+                        <span>$@orden.total</span>
+                        <button @onclick="() => AbrirEditarOrden(orden)"
+                                style="background:transparent; border:none; cursor:pointer; font-size:15px; margin-left:auto;">
+                            ✏️
+                        </button>
+                    </div>
+                }
                     @if (ordenesFiltradas.Count == 0)
                     {
                         <p style="color:#888; font-size:13px; text-align:center;">
@@ -215,7 +219,40 @@
         </div>
     </div>
 }
-
+@* Modal editar orden (ingreso) *@
+@if (showEditarOrdenModal)
+{
+    <div class="comfirm-overlay">
+        <div class="comfirm-box">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h3 style="margin:0; color:white;">Editar Fecha de Ingreso</h3>
+                <button @onclick="() => showEditarOrdenModal = false"
+                        style="background:transparent; border:none; color:white;
+                                       font-size:22px; cursor:pointer;">
+                    ✕
+                </button>
+            </div>
+            <div class="register-grid">
+                <div class="register-field" style="grid-column:span 2;">
+                    <label>Fecha</label>
+                    <input type="date"
+                           value="@editOrden.fecha"
+                           @oninput="e => editOrden.fecha = e.Value?.ToString()" />
+                </div>
+            </div>
+            <div style="display:flex; gap:10px; justify-content:center; margin-top:10px;">
+                <button class="register-btn" style="background:gray; width:35%;"
+                        @onclick="() => showEditarOrdenModal = false">
+                    Cancelar
+                </button>
+                <button class="register-btn" style="width:45%;"
+                        @onclick="GuardarEditarOrden">
+                    Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+}
 
 @* Modal registro gasto *@
 @if (showRegisterModal)
@@ -329,8 +366,12 @@
     
     bool showEditarGastoModal = false;
     bool showEliminarGastoModal = false;
+    bool showEditarOrdenModal = false;
     Gasto editGasto = new();
     Gasto gastoSeleccionado = null;
+    Orden editOrden = new();
+ 
+    
     // Variables de filtro
     string fechaDesde = "";
     string fechaHasta = "";
@@ -599,6 +640,34 @@
         insumoSeleccionadoConfirmado = false;
         insumosFiltradosBusqueda = new List<Insumo>();
         StateHasChanged();
+    }
+
+    void AbrirEditarOrden(Orden orden)
+    {
+        editOrden = new Orden
+        {
+            orden_id = orden.orden_id,
+            fecha = orden.fecha,
+            total = orden.total
+        };
+        showEditarOrdenModal = true;
+        StateHasChanged();
+    }
+
+    async Task GuardarEditarOrden()
+    {
+        if (string.IsNullOrWhiteSpace(editOrden.fecha)) return;
+
+        var payload = new Dictionary<string, object>
+        {
+            ["fecha"] = editOrden.fecha
+        };
+
+        await Http.PutAsJsonAsync(
+            $"{ApiConfig.BaseUrl}/Orden/ordenes/{editOrden.orden_id}", payload);
+
+        showEditarOrdenModal = false;
+        await LoadData();
     }
 
     class Insumo

@@ -34,7 +34,10 @@
     </div>
 
     <div class="main-content">
-        @Body
+        @if (!cargandoSesion)
+        {
+            @Body
+        }
     </div>
 </div>
 
@@ -43,13 +46,24 @@
 
 
 @code {
+    bool cargandoSesion = true;
+
     protected override async Task OnInitializedAsync()
     {
         SidebarService.OnChange += StateHasChanged;
-        AuthState.Init(JS);
 
-        // Cargar sesión desde localStorage
-        await AuthState.LoadSession();
+        if (!AuthState.IsAuthenticated)
+        {
+            var datos = await JS.InvokeAsync<AuthData>("authStorage.get");
+            if (!string.IsNullOrEmpty(datos.token))
+            {
+                AuthState.Token = datos.token;
+                AuthState.UserName = datos.userName;
+                AuthState.Rol = datos.rol;
+            }
+        }
+
+        cargandoSesion = false;
 
         var uri = Nav.Uri;
         var isLoginPage = uri.Contains("/login");
@@ -57,13 +71,13 @@
         if (!isLoginPage && !AuthState.IsAuthenticated)
         {
             Nav.NavigateTo("/login");
-            return;
         }
     }
 
-    async void CerrarSesion()
+    async Task CerrarSesion()
     {
-        await AuthState.Logout();
+        AuthState.Logout();
+        await JS.InvokeVoidAsync("authStorage.clear");
         Nav.NavigateTo("/login");
     }
 
@@ -76,5 +90,12 @@
     public void Dispose()
     {
         SidebarService.OnChange -= StateHasChanged;
+    }
+
+    class AuthData
+    {
+        public string token { get; set; } = "";
+        public string userName { get; set; } = "";
+        public int rol { get; set; }
     }
 }

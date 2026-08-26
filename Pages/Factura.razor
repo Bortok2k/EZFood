@@ -1,5 +1,8 @@
 ﻿@page "/Factura"
 
+@using System.Text.Json;
+@using System.Text.Json.Serialization;
+
 @inject HttpClient Http
 @inject SidebarService SidebarService
 @implements IDisposable
@@ -63,16 +66,26 @@
     }
 </div>
 
+@if (showToast)
+{
+    <div class="toast-confirmacion @(toastEsExito ? "toast-exito" : "toast-error")">
+        <span class="toast-icono">@(toastEsExito ? "✅" : "⚠️")</span>
+        <span>@toastMessage</span>
+    </div>
+}
+
 @* Modal resumen factura *@
 @if (showFacturaModal && facturaGenerada != null)
 {
     <div class="comfirm-overlay">
         <div class="comfirm-box" style="width:500px; max-height:85vh; overflow-y:auto;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                <h3 style="margin:0; color:white;">Factura Electrónica</h3>
+                <h3 style="margin:0; color:white;">
+                    @(facturaGenerada.estado == "EMITIDA" ? "✅ Factura Emitida" : "⚠️ Factura Rechazada")
+                </h3>
                 <button @onclick="() => showFacturaModal = false"
                         style="background:transparent; border:none; color:white;
-                                   font-size:22px; cursor:pointer;">
+                           font-size:22px; cursor:pointer;">
                     ✕
                 </button>
             </div>
@@ -140,14 +153,42 @@
                 </div>
             </div>
 
-            <div style="text-align:center; color:#888; font-size:11px; margin-top:15px;">
+            <div style="text-align:center; font-size:12px; margin-top:15px; font-weight:600;
+                color:@(facturaGenerada.estado == "EMITIDA" ? "#2ecc71" : "#e74c3c");">
                 Estado: @facturaGenerada.estado — Documento de prueba
             </div>
+
+            @if (!string.IsNullOrEmpty(facturaGenerada.cufe))
+            {
+                <div style="margin-top:10px; color:#ccc; font-size:11px; word-break:break-all;">
+                    <strong>CUFE:</strong> @facturaGenerada.cufe
+                </div>
+                <div style="color:#ccc; font-size:11px;">
+                    <strong>Ambiente:</strong> @facturaGenerada.ambiente_dian (validación mock)
+                </div>
+            }
+
+            @if (facturaGenerada.mensajes_validacion != null && facturaGenerada.mensajes_validacion.Any())
+            {
+                <div style="margin-top:10px; background:#5a1f1f; border-radius:10px; padding:10px; color:#ffb3b3; font-size:12px;">
+                    <strong>Motivo de rechazo:</strong>
+                    <ul style="margin:5px 0 0 15px; padding:0;">
+                        @foreach (var msg in facturaGenerada.mensajes_validacion)
+                        {
+                            <li>@msg</li>
+                        }
+                    </ul>
+                </div>
+            }
         </div>
     </div>
 }
 
 @code {
+    bool showToast = false;
+    string toastMessage = "";
+    bool toastEsExito = true;
+
     string nitBusqueda = "";
     string ordenSeleccionadaId = "";
     string? mensajeError = null;
@@ -216,22 +257,41 @@
             var response = await Http.PostAsJsonAsync(
                 $"{ApiConfig.BaseUrl}/FacturaElectronica/facturas", payload);
 
-            // ← leer solo una vez, directo a objeto
             var result = await response.Content.ReadFromJsonAsync<FacturaResponse>();
-
             facturaGenerada = result?.data;
 
-            Console.WriteLine($"Factura: {facturaGenerada?.factura_id}");
-            Console.WriteLine($"Cliente: {facturaGenerada?.cliente_nombre}");
-
             showFacturaModal = true;
+
+            // ← Toast de confirmación
+            var aceptada = facturaGenerada?.estado == "EMITIDA";
+            toastEsExito = aceptada;
+            toastMessage = aceptada
+                ? "Factura generada y validada correctamente"
+                : "Factura generada, pero fue rechazada en la validación";
+            showToast = true;
             StateHasChanged();
+
+            // Se oculta solo después de unos segundos
+            _ = OcultarToastDespues(4000);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error: {ex.Message}");
             mensajeError = "Error al generar la factura. Intente de nuevo.";
+
+            toastEsExito = false;
+            toastMessage = "No se pudo generar la factura";
+            showToast = true;
+            StateHasChanged();
+            _ = OcultarToastDespues(4000);
         }
+    }
+
+    async Task OcultarToastDespues(int ms)
+    {
+        await Task.Delay(ms);
+        showToast = false;
+        StateHasChanged();
     }
 
     class Cliente
@@ -246,7 +306,10 @@
     class Orden
     {
         public string? orden_id { get; set; }
-        public int mesa { get; set; }
+
+        [JsonConverter(typeof(FlexibleStringConverter))]
+        public string? mesa { get; set; }
+
         public string? estado_nombre { get; set; }
         public int total { get; set; }
         public string? fecha { get; set; }
@@ -268,7 +331,8 @@
         public string? cliente_nombre { get; set; }
         public string? cliente_correo { get; set; }
         public string? cliente_direccion { get; set; }
-        public int mesa { get; set; }
+        [JsonConverter(typeof(FlexibleStringConverter))]
+        public string? mesa { get; set; }
         public string? fecha { get; set; }
         public string? hora { get; set; }
         public List<PlatoOrden> platos { get; set; } = new();
@@ -276,6 +340,30 @@
         public int impuesto_consumo { get; set; }
         public int total { get; set; }
         public string? estado { get; set; }
+        public string? cufe { get; set; }
+        public string? ambiente_dian { get; set; }
+        public List<string>? mensajes_validacion { get; set; }
+    }
+
+    class FlexibleStringConverter : JsonConverter<string>
+    {
+        public override string Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            if (reader.TokenType == JsonTokenType.Number)
+                return reader.GetInt32().ToString();
+            if (reader.TokenType == JsonTokenType.String)
+                return reader.GetString() ?? "";
+            if (reader.TokenType == JsonTokenType.True)
+                return "true";
+            if (reader.TokenType == JsonTokenType.False)
+                return "false";
+            return "";
+        }
+
+        public override void Write(Utf8JsonWriter writer, string value, JsonSerializerOptions options)
+        {
+            writer.WriteStringValue(value);
+        }
     }
 
     class OrdenApiResponse { public List<Orden>? data { get; set; } }

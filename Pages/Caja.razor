@@ -321,19 +321,11 @@
         try
         {
             var response = await Http.GetFromJsonAsync<OrdenApiResponse>(
-                $"{ApiConfig.BaseUrl}/Orden/ordenes");
+                $"{ApiConfig.BaseUrl}/Orden/ordenes?estado_nombre=Preparacion");
 
-            Console.WriteLine($"Total ordenes: {response?.data?.Count}");
-            foreach (var o in response?.data ?? new List<Orden>())
-            {
-                Console.WriteLine($"Orden: mesa={o.mesa} estado={o.estado_nombre} total={o.total}");
-            }
+            Console.WriteLine($"Total ordenes en preparacion: {response?.data?.Count}");
 
-            ordenes = response?.data
-                ?.Where(o => o.estado_nombre == "Preparacion")
-                .ToList() ?? new List<Orden>();
-
-            Console.WriteLine($"Ordenes en preparacion: {ordenes.Count}");
+            ordenes = response?.data ?? new List<Orden>();
         }
         catch (Exception ex)
         {
