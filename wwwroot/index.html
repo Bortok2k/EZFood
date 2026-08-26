@@ -39,6 +39,26 @@
         <span class="dismiss">🗙</span>
     </div>
     <script src="_framework/blazor.webassembly.js"></script>
+
+    <script>
+        window.authStorage = {
+            set: (token, userName, rol) => {
+                localStorage.setItem('ezfood_token', token);
+                localStorage.setItem('ezfood_user', userName);
+                localStorage.setItem('ezfood_rol', rol);
+            },
+            get: () => ({
+                token: localStorage.getItem('ezfood_token') || '',
+                userName: localStorage.getItem('ezfood_user') || '',
+                rol: parseInt(localStorage.getItem('ezfood_rol') || '0')
+            }),
+            clear: () => {
+                localStorage.removeItem('ezfood_token');
+                localStorage.removeItem('ezfood_user');
+                localStorage.removeItem('ezfood_rol');
+            }
+        };
+    </script>
 </body>
 
 </html>
