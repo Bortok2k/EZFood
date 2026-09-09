@@ -34,10 +34,10 @@
                               border:1px solid #ddd; margin-top:5px; box-sizing:border-box;" />
             </div>
 
-            @if (!string.IsNullOrEmpty(errorMsg))
+            @if (!string.IsNullOrEmpty(avisoSesion))
             {
-                <p style="color:red; font-size:13px; text-align:center; margin:0;">
-                    @errorMsg
+                <p style="color:#F28C45; font-size:13px; text-align:center; margin:0;">
+                    @avisoSesion
                 </p>
             }
 
@@ -57,6 +57,7 @@
     string password = "";
     string errorMsg = "";
     bool cargando = false;
+    string? avisoSesion = null;
 
     async Task DoLogin()
     {
@@ -119,6 +120,16 @@
     async Task OnKeyDown(KeyboardEventArgs e)
     {
         if (e.Key == "Enter") await DoLogin();
+    }
+
+    protected override void OnInitialized()
+    {
+        var uri = new Uri(Nav.Uri);
+        var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+        if (query["expirada"] == "1")
+        {
+            avisoSesion = "Tu sesión expiró. Ingresa de nuevo para continuar.";
+        }
     }
 
     class LoginResponse

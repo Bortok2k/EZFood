@@ -36,6 +36,15 @@
     flex-direction: column;
 }
 
+.side-button {
+    background: #F6B26B;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 20px;
+    color: white;
+    cursor: pointer;
+}
+
 
 
 
