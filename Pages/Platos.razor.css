@@ -55,18 +55,19 @@
 
 .table {
     width: 100%;
+    flex: 1;
 }
 
 .table-header,
 .table-row {
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
     align-items: center;
     margin-bottom: 10px;
 }
 
 .table-row {
-    background: #eee;
+    background: #ffffff;
     padding: 10px;
     border-radius: 20px;
 }
