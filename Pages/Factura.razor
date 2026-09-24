@@ -37,19 +37,29 @@
         </div>
 
         <!-- Selector de orden -->
-        <div style="display:flex; gap:10px; align-items:center;">
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
             <label style="font-weight:600;">Seleccionar orden pagada:</label>
+            <input placeholder="Buscar por mesa, fecha o ID..."
+                   value="@searchOrden"
+                   @oninput="e => searchOrden = e.Value?.ToString()"
+                   style="padding:8px 15px; border-radius:20px; border:none; width:220px;" />
             <select @bind="ordenSeleccionadaId"
                     style="padding:8px 15px; border-radius:20px; border:none; background:white;">
                 <option value="">-- Selecciona una orden --</option>
-                @foreach (var orden in ordenesPagadas)
+                @foreach (var orden in OrdenesPagadasFiltradas)
                 {
                     <option value="@orden.orden_id">
-                        Mesa @orden.mesa — $@orden.total — @orden.fecha
+                        @orden.mesa — $@orden.total — @orden.fecha
                     </option>
                 }
             </select>
         </div>
+        @if (string.IsNullOrWhiteSpace(searchOrden) && ordenesPagadas.Count > 50)
+        {
+            <span style="font-size:11px; color:#888;">
+                Mostrando las 50 más recientes de @ordenesPagadas.Count — escribe para buscar en el resto.
+            </span>
+        }
 
         <button @onclick="GenerarFactura"
                 disabled="@(string.IsNullOrEmpty(ordenSeleccionadaId))"
@@ -68,8 +78,11 @@
 
 @if (showToast)
 {
-    <div class="toast-confirmacion @(toastEsExito ? "toast-exito" : "toast-error")">
-        <span class="toast-icono">@(toastEsExito ? "✅" : "⚠️")</span>
+    <div style="position:fixed; top:24px; right:24px; display:flex; align-items:center; gap:10px;
+                    padding:14px 22px; border-radius:14px; color:white; font-size:14px; font-weight:600;
+                    box-shadow:0 6px 20px rgba(0,0,0,0.25); z-index:10001;
+                    background:@(toastEsExito ? "#2ecc71" : "#e74c3c");">
+        <span>@(toastEsExito ? "✅" : "⚠️")</span>
         <span>@toastMessage</span>
     </div>
 }
@@ -83,6 +96,15 @@
                 <h3 style="margin:0; color:white;">
                     @(facturaGenerada.estado == "EMITIDA" ? "✅ Factura Emitida" : "⚠️ Factura Rechazada")
                 </h3>
+                @if (!string.IsNullOrEmpty(facturaGenerada.cufe))
+                {
+                    <div style="margin-top:10px; color:#ccc; font-size:11px; word-break:break-all;">
+                        <strong>CUFE:</strong> @facturaGenerada.cufe
+                    </div>
+                    <div style="color:#ccc; font-size:11px;">
+                        <strong>Ambiente:</strong> @facturaGenerada.ambiente_dian (validación mock)
+                    </div>
+                }
                 <button @onclick="() => showFacturaModal = false"
                         style="background:transparent; border:none; color:white;
                            font-size:22px; cursor:pointer;">
@@ -199,12 +221,31 @@
     FacturaData? facturaGenerada = null;
 
     protected override async Task OnInitializedAsync()
+{
+    SidebarService.SetButtons(
+        @<button class="side-button" @onclick='() => Nav.NavigateTo("/caja")'>
+            ← Volver a Caja
+        </button>
+    );
+
+    // Leer orden_id de la URL, si viene desde "Cobrar y facturar"
+    string? ordenIdDesdeUrl = null;
+    var query = new Uri(Nav.Uri).Query;
+    if (query.Contains("orden_id="))
     {
-        SidebarService.SetButtons(null);
-        await LoadOrdenesPagadas();
+        var inicio = query.IndexOf("orden_id=") + "orden_id=".Length;
+        var fin = query.IndexOf('&', inicio);
+        ordenIdDesdeUrl = fin > 0 ? query[inicio..fin] : query[inicio..];
+        ordenIdDesdeUrl = Uri.UnescapeDataString(ordenIdDesdeUrl);
     }
 
-    public void Dispose() { }
+    await LoadOrdenesPagadas();
+
+    if (!string.IsNullOrEmpty(ordenIdDesdeUrl))
+    {
+        ordenSeleccionadaId = ordenIdDesdeUrl;
+    }
+}
 
     async Task LoadOrdenesPagadas()
     {
@@ -213,11 +254,49 @@
             var response = await Http.GetFromJsonAsync<OrdenApiResponse>(
                 $"{ApiConfig.BaseUrl}/Orden/ordenes");
             ordenesPagadas = response?.data
-                ?.Where(o => o.estado_nombre == "pagado")
+                ?.Where(o => o.estado_nombre?.ToLower() == "pagado")
+                .OrderByDescending(o => o.fecha)
+                .ThenByDescending(o => o.hora)
                 .ToList() ?? new List<Orden>();
         }
-        catch { ordenesPagadas = new List<Orden>(); }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+            ordenesPagadas = new List<Orden>();
+        }
     }
+
+    string searchOrden = "";
+
+    List<Orden> OrdenesPagadasFiltradas
+    {
+        get
+        {
+            List<Orden> baseList;
+
+            if (string.IsNullOrWhiteSpace(searchOrden))
+                baseList = ordenesPagadas.Take(50).ToList();
+            else
+                baseList = ordenesPagadas.Where(o =>
+                    (o.mesa?.Contains(searchOrden, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (o.fecha?.Contains(searchOrden) ?? false) ||
+                    (o.orden_id?.Contains(searchOrden, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    o.total.ToString().Contains(searchOrden)
+                ).ToList();
+
+            // Garantiza que la orden preseleccionada siempre aparezca en el <select>
+            if (!string.IsNullOrEmpty(ordenSeleccionadaId) &&
+                !baseList.Any(o => o.orden_id == ordenSeleccionadaId))
+            {
+                var seleccionada = ordenesPagadas.FirstOrDefault(o => o.orden_id == ordenSeleccionadaId);
+                if (seleccionada != null) baseList.Insert(0, seleccionada);
+            }
+
+            return baseList;
+        }
+    }
+
+    public void Dispose() { }
 
     async Task BuscarCliente()
     {
@@ -241,6 +320,7 @@
         }
     }
 
+
     async Task GenerarFactura()
     {
         mensajeError = null;
@@ -262,28 +342,25 @@
 
             showFacturaModal = true;
 
-            // ← Toast de confirmación
             var aceptada = facturaGenerada?.estado == "EMITIDA";
             toastEsExito = aceptada;
             toastMessage = aceptada
-                ? "Factura generada y validada correctamente"
+                ? $"Factura emitida — CUFE: {facturaGenerada?.cufe?[..12]}..."
                 : "Factura generada, pero fue rechazada en la validación";
             showToast = true;
             StateHasChanged();
 
-            // Se oculta solo después de unos segundos
-            _ = OcultarToastDespues(4000);
+            _ = OcultarToastDespues(5000);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error: {ex.Message}");
             mensajeError = "Error al generar la factura. Intente de nuevo.";
-
             toastEsExito = false;
             toastMessage = "No se pudo generar la factura";
             showToast = true;
             StateHasChanged();
-            _ = OcultarToastDespues(4000);
+            _ = OcultarToastDespues(5000);
         }
     }
 
@@ -293,6 +370,7 @@
         showToast = false;
         StateHasChanged();
     }
+
 
     class Cliente
     {
