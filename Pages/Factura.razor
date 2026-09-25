@@ -222,12 +222,6 @@
 
     protected override async Task OnInitializedAsync()
 {
-    SidebarService.SetButtons(
-        @<button class="side-button" @onclick='() => Nav.NavigateTo("/caja")'>
-            ← Volver a Caja
-        </button>
-    );
-
     // Leer orden_id de la URL, si viene desde "Cobrar y facturar"
     string? ordenIdDesdeUrl = null;
     var query = new Uri(Nav.Uri).Query;
@@ -244,6 +238,18 @@
     if (!string.IsNullOrEmpty(ordenIdDesdeUrl))
     {
         ordenSeleccionadaId = ordenIdDesdeUrl;
+    }
+}
+
+protected override void OnAfterRender(bool firstRender)
+{
+    if (firstRender)
+    {
+        SidebarService.SetButtons(
+            @<button class="side-button" @onclick='() => Nav.NavigateTo("/caja")'>
+                ← Volver a Caja
+            </button>
+        );
     }
 }
 

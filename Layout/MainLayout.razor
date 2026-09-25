@@ -50,7 +50,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        SidebarService.OnChange += StateHasChanged;
+        SidebarService.OnChange += HandleSidebarChanged;
 
         if (!AuthState.IsAuthenticated)
         {
@@ -74,6 +74,11 @@
         }
     }
 
+    private void HandleSidebarChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
     async Task CerrarSesion()
     {
         AuthState.Logout();
@@ -89,7 +94,7 @@
 
     public void Dispose()
     {
-        SidebarService.OnChange -= StateHasChanged;
+        SidebarService.OnChange -= HandleSidebarChanged;
     }
 
     class AuthData

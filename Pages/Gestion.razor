@@ -19,8 +19,15 @@
 @code {
     protected override void OnInitialized()
     {
-        SetSidebarButtons();
-        Nav.LocationChanged += OnLocationChanged;
+        // ya no se llama SetButtons aquí
+    }
+    
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            SetSidebarButtons();
+        }
     }
 
     void OnLocationChanged(object sender, LocationChangedEventArgs e)
@@ -33,9 +40,9 @@
     }
 
     void SetSidebarButtons()
-    {
-        SidebarService.SetButtons(
-            @<div style="display:flex; flex-direction:column; gap:10px;">
+{
+    SidebarService.SetButtons(
+        @<div style="display:flex; flex-direction:column; gap:10px;">
     <button class="side-button" @onclick='() => Nav.NavigateTo("/platos")'>
         Lista de Productos
     </button>
@@ -43,8 +50,8 @@
         Lista de Clientes
     </button>
 </div>
-        );
-    }
+    );
+}
 
     public void Dispose()
     {

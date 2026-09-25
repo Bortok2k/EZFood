@@ -263,6 +263,7 @@
 
 @code {
 
+    private System.Threading.Timer? _pollingTimer;
     bool showEliminarOrdenModal = false;
     bool showEditarModal = false;
     Orden? ordenEliminar;
@@ -285,7 +286,17 @@
         await LoadMesas();
         await LoadPlatos();
         await LoadOrdenes();
+
+        _pollingTimer = new System.Threading.Timer(async _ =>
+        {
+            await InvokeAsync(async () =>
+            {
+                await LoadOrdenes();
+                StateHasChanged();
+            });
+        }, null, TimeSpan.FromSeconds(11), TimeSpan.FromSeconds(11));
     }
+
     public void Dispose()
     {
         
