@@ -15,6 +15,18 @@
     animation: toast-in 0.3s ease-out;
 }
 
+.side-button {
+    background: #F6B26B;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 20px;
+    color: white;
+    cursor: pointer;
+    transition: 0.3s;
+    width: 160px;
+    text-align: center;
+}
+
 .toast-exito {
     background: #2ecc71;
 }
